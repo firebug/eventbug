@@ -1,0 +1,6 @@
+content eventbug content/ contentaccessible=yes
+content eventbug content/
+skin	eventbug	classic/1.0	skin/classic/
+
+overlay chrome://firebug/content/firebugOverlay.xul         chrome://eventbug/content/eventbug.xul
+
