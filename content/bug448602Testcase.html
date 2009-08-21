@@ -1,0 +1,86 @@
+<html onmousemove="window.status = 'mousemove';">
+  <head>
+    <script>
+      function log(str) {
+        document.getElementById("log").textContent += str;
+      }
+
+      function testListener(evt) {
+        log("{test listener function}\n");
+      }
+
+      var c = 0;
+      function test(target) {
+        log("\n----Test " + (++c) + " (" + target + ")----\n");
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        var els = Components.classes["@mozilla.org/eventlistenerservice;1"]
+                    .getService(Components.interfaces.nsIEventListenerService);
+
+        target.addEventListener("test", testListener, true);
+        target.addEventListener("test",
+        {
+          handleEvent: function() {
+             log("{test listener object 1}\n");
+          },
+          toString: function() {
+            return "{Own toString() impl}";
+          }
+        }, true);
+        target.addEventListener("test", 
+        {
+          handleEvent: function() {
+             log("{test listener object 2}\n");
+          },
+        }, true);
+
+        printInfo(target);
+        printChain(target);
+      }
+
+      function printInfo(target) {
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        var els = Components.classes["@mozilla.org/eventlistenerservice;1"]
+                    .getService(Components.interfaces.nsIEventListenerService);
+        var infos = els.getListenerInfoFor(target);
+        var testL;
+        var s = infos.length + " listeners\n";
+        for (var i = 0; i < infos.length; ++i) {
+          var info = infos[i];
+          s += "  type: " + info.type + 
+               ", stringValue: " + info.stringValue +
+               ", capturing:" + info.capturing +
+               ", allowsUntrusted: " + info.allowsUntrusted +
+               ", inSystemEventGroup: " + info.inSystemEventGroup + "\n";
+        }
+        log(s);
+      }
+
+      function printChain(target) {
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        var els = Components.classes["@mozilla.org/eventlistenerservice;1"]
+                    .getService(Components.interfaces.nsIEventListenerService);
+        var chain = els.getEventTargetChainFor(target);
+        var s = "\t";
+        for (var i = 0 ; i < chain.length; ++i) {
+          s += chain[i] + "\n\t";
+        }
+        log("----chain----\n" + s);
+      }
+      
+      function startTest(t) {
+        document.documentElement.onmouseover = function mo() {
+          window.status = 'mouseover';
+        }
+        test(t);
+        test(document);
+        test(document.documentElement);
+      }
+      
+    </script>
+  </head>
+  <body>
+    Test nsIEventListenerService
+    <pre id="log"></pre>
+    <iframe width="1" height="1" src="http://mozilla.pettay.fi/moztests/context.xhtml" onload="startTest(this.contentWindow)"></iframe>
+  </body>
+</html>

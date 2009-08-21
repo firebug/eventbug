@@ -8,15 +8,14 @@
     <em:version>0.1a1</em:version>
     <em:type>2</em:type>
 
-    <!-- Firefox -->
+    <!-- Any suitably modern toolkit application -->
     <em:targetApplication>
       <Description>
-        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-        <em:minVersion>3.*</em:minVersion>
-        <em:maxVersion>3.2.*</em:maxVersion>
+        <em:id>toolkit@mozilla.org</em:id>
+        <em:minVersion>1.9.0.*</em:minVersion>
+        <em:maxVersion>1.9.3.*</em:maxVersion>
       </Description>
     </em:targetApplication>
-
 
     <em:name>EventBug</em:name>
     <em:description>Event views for Firebug.</em:description>

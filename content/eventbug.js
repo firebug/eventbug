@@ -1,8 +1,9 @@
+window.dump("***************** eventbug.js compiling***********************\n");
 FBL.ns(function() { with (FBL) {
+    window.dump("***************** eventbug.js running***********************\n");
 
-var eventListenerService = Components.classes["@mozilla.org/eventlistenerservice;1"].getService(Components.interfaces.nsIEventListenerService);
 const Ci = Components.interfaces;
- 
+
 const nsIEventListenerInfo = Components.interfaces.nsIEventListenerInfo;
 
 const SHOW_ALL = Ci.nsIDOMNodeFilter.SHOW_ALL;
@@ -13,7 +14,7 @@ function BoundEventListenerInfo(element, eventInfo)
     this.listener = eventInfo;
 }
 
-var BoundEventListenerInfoRep = domplate(Firebug.Rep, 
+var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 {
     tag: SPAN(
             {_repObject: "$object"},
@@ -21,12 +22,12 @@ var BoundEventListenerInfoRep = domplate(Firebug.Rep,
             SPAN({class: "arrayComma"}, "."),
             TAG("$object.listener|getNaturalTag", {object: "$object.listener"} )
             ),
-    
+
     shortTag:  SPAN(
             {_repObject: "$object"},
-            TAG("$object.element|getNaturalTag", {object: "$object.element"}) 
-            ),      
-            
+            TAG("$object.element|getNaturalTag", {object: "$object.element"})
+            ),
+
     getNaturalTag: function(value)
     {
         var rep = Firebug.getRep(value);
@@ -43,16 +44,16 @@ var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 var EventListenerInfoRep = domplate(Firebug.Rep,
 {
      tag:    SPAN(
-                 A({class: "objectLink objectLink-$linkToType", repObject: "$object|getFunction"}, 
+                 A({class: "objectLink objectLink-$linkToType", repObject: "$object|getFunction"},
                          "$object|getHandlerSummary"),
                  SPAN("$object|getAttributes")
                  ),
- 
+
      getAttributes: function(listener)
      {
          return (listener.capturing?" Capturing ":"") + (listener.allowsUntrusted?" Allows-Untrusted ":"") + (listener.inSystemEventGroup?" System-Event-Group":"");
      },
-     
+
      getHandlerSummary: function(listener)
      {
          if (!listener)
@@ -64,9 +65,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          FBTrace.sysout("getHandlerSummary "+fncName, listener);
          return fncName;
      },
-     
+
      reFunctionName: /unction\s*([^\(]*)/,
-     
+
      getFunction: function(listener)
      {
          var script = findScriptForFunctionInContext(FirebugContext, listener.stringValue);
@@ -84,7 +85,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
                  var seekingName = m[1];
              if (FBTrace.DBG_EVENTS)
                  FBTrace.sysout("getFunction seeking "+seekingName+" the name from "+fnAsString);
-             
+
              var fnc = forEachFunction(FirebugContext, function seek(script, fn)
              {
                  if (FBTrace.DBG_EVENTS)
@@ -102,10 +103,10 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
                      return fn;
                  if (FBTrace.DBG_EVENTS)
                      FBTrace.sysout("getFunction also trying "+script.functionObject.stringValue);
-                 
+
                  if (script.functionObject.stringValue == fnAsString)
                      return fn;
-                 
+
                  return false;
              });
              if (fnc)
@@ -114,14 +115,19 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          }
          return function(){};
      },
-     
+
    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+        className: "nsIEventListenerInfo",
 
         linkToType: "function",
 
         supportsObject: function(object)
         {
-            return (object instanceof nsIEventListenerInfo)?10:0;
+            if (!Ci.nsIEventListenerInfo)
+                return 0;
+
+            return (object instanceof Ci.nsIEventListenerInfo)?10:0;
         },
 
         getTooltip: function(listener)
@@ -132,7 +138,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         inspectObject: function(listener, context)
         {
             var script = findScriptForFunctionInContext(context, listener.fnAsString);
-       
+
             if (script)
                 return context.chrome.select(script);
 
@@ -164,7 +170,7 @@ var EventInfoTemplate = domplate
                 TR(
                   { class: "memberRow", onclick: "$onClickRow", _repObject:"$eventType|getValue" },
                   TD(
-                          {class: "memberLabel userLabel",  $hasChildren: "$eventType.hasChildren"}, 
+                          {class: "memberLabel userLabel",  $hasChildren: "$eventType.hasChildren"},
                           "$eventType.label"
                       ),
                   TD(
@@ -196,20 +202,20 @@ var EventInfoTemplate = domplate
             FBTrace.sysout("getEventsByType members "+members.length, members);
             return members;
         },
-        
+
         getValue: function(eventType)
         {
             FBTrace.sysout("getValue ", eventType);
             return eventType.value;
         },
-        
+
         getNaturalTag: function(value)
         {
             var rep = Firebug.getRep(value);
             var tag = rep.shortTag ? rep.shortTag : rep.tag;
             return tag;
         },
-        
+
         onClickRow: function(event)
         {FBTrace.sysout("onClickRow", event);
             if (isLeftClick(event))
@@ -232,13 +238,13 @@ var EventInfoTemplate = domplate
                         )
                       )
                     ),
-        
+
         toggleRow: function(row)
         {
             toggleClass(row, "opened");
             var opened = hasClass(row, "opened");
             FBTrace.sysout("toggleRow opened "+opened, row);
-                        
+
             if (hasClass(row, "opened"))
             {
                 var boundListeners = row.repObject;
@@ -255,6 +261,7 @@ var EventInfoTemplate = domplate
     }
 );
 
+
 function EventPanel() {}
 
 EventPanel.prototype  = extend(Firebug.Panel,
@@ -265,20 +272,38 @@ EventPanel.prototype  = extend(Firebug.Panel,
     initializeNode: function()
     {
     },
-     
-    initialize: function(context, doc) 
+
+    initialize: function(context, doc)
     {
         this.context = context;
         Firebug.DOMBasePanel.prototype.initialize.apply(this, arguments);
     },
-    
+
+    getEventListenerService: function()
+    {
+        if (!this.eventListenerService)
+        {
+            try
+            {
+                var eventListenerClass = Components.classes["@mozilla.org/eventlistenerservice;1"];
+
+                this.eventListenerService = eventListenerClass.getService(Components.interfaces.nsIEventListenerService);
+            }
+            catch(exc)
+            {
+                FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
+            }
+        }
+        return this.eventListenerService;
+    },
+
     show: function(state)
     {
         var root = this.context.window.document.documentElement;
         this.selection = this.getEventInfosRecursive(root);
         this.rebuild(true);
     },
-    
+
     rebuild: function()
     {
         try
@@ -290,16 +315,16 @@ EventPanel.prototype  = extend(Firebug.Panel,
             FBTrace.sysout("Event.rebuild fails "+e, e);
         }
     },
-    
+
     getObjectPath: function(object)
     {
         FBTrace.sysout("event getObjectPath", object);
-    }, 
+    },
     /***************************************************************************************/
     getEventInfosRecursive: function(elt)
     {
         var walker = this.context.window.document.createTreeWalker(elt, SHOW_ALL, null, true);
-        
+
         var node = elt;
         var eventInfos = {};
         for (; node; node = walker.nextNode())
@@ -311,7 +336,7 @@ EventPanel.prototype  = extend(Firebug.Panel,
                 var entry = new BoundEventListenerInfo( elt,  info);
                 if (eventInfos.hasOwnProperty(info.type))
                 {
-                    if ( eventInfos[info.type] instanceof Array) 
+                    if ( eventInfos[info.type] instanceof Array)
                         eventInfos[info.type].push(entry);  // more than two
                     else
                         eventInfos[info.type] = [eventInfos[info.type], entry]; // two handlers
@@ -324,14 +349,18 @@ EventPanel.prototype  = extend(Firebug.Panel,
         FBTrace.sysout("getEventInfosRecursive eventInfos", eventInfos);
         return eventInfos;
     },
-    
+
     appendEventInfos: function(elt, fnTakesEltInfo)
     {
-        var infos = eventListenerService.getListenerInfoFor(elt);
+        var els = this.getEventListenerService();
+        if (!els)
+            return;
+
+        var infos = els.getListenerInfoFor(elt);
         for (var i = 0; i < infos.length; i++)
         {
             var anInfo = infos[i];
-            if (anInfo instanceof nsIEventListenerInfo) // QI
+            if (anInfo instanceof Ci.nsIEventListenerInfo) // QI
             {
                 if(FBTrace.DBG_EVENTS)
                     FBTrace.sysout(this.context.getName()+" info["+i+"] "+anInfo, [elt, anInfo]);
@@ -339,13 +368,13 @@ EventPanel.prototype  = extend(Firebug.Panel,
             }
         }
     }
-   
+
 });
 
 
-function dumpEvents() 
+function dumpEvents()
 {
-    try 
+    try
     {
         var eventListenerService = Components.classes["@mozilla.org/eventlistenerservice;1"].getService(Components.interfaces.nsIEventListenerService);
         var elt = document.getElementById("button");
@@ -354,7 +383,7 @@ function dumpEvents()
         {
             output.heading("nsIVariant typeof info: "+typeof info+"\n");
         }
-        else if (info.wrappedJSObject) 
+        else if (info.wrappedJSObject)
         {
             output.heading("wrappedJSObject typeof info: "+typeof info.wrappedJSObject+"\n");
         }
@@ -378,8 +407,8 @@ function dumpEvents()
                  output.heading(s);
             }
         }
-    } 
-    catch (exc) 
+    }
+    catch (exc)
     {
         output.heading("Failed to get eventListenerService: "+exc+"\n");
     }
