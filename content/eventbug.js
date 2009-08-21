@@ -16,7 +16,7 @@ function BoundEventListenerInfo(element, eventInfo)
 
 var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 {
-    tag: SPAN(
+    tag: DIV(
             {_repObject: "$object"},
             TAG("$object.element|getNaturalTag", {object: "$object.element"}),
             SPAN({class: "arrayComma"}, "."),
@@ -51,7 +51,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
      getAttributes: function(listener)
      {
-         return (listener.capturing?" Capturing ":"") + (listener.allowsUntrusted?" Allows-Untrusted ":"") + (listener.inSystemEventGroup?" System-Event-Group":"");
+         return (listener.capturing?" Capturing ":"") +
+                (listener.allowsUntrusted?" Allows-Untrusted ":"") +
+                (listener.inSystemEventGroup?" System-Event-Group":"");
      },
 
      getHandlerSummary: function(listener)
@@ -161,49 +163,58 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
 
 var EventInfoTemplate = domplate
-(
+(Firebug.Rep,
     {
         // http://www.softwareishard.com/blog/domplate/domplate-examples-part-ii/ How to use custom iterator in a FOR loop
         tag:
             TABLE(
-              FOR("eventType", "$object|getEventsByType",
-                TR(
-                  { class: "memberRow", onclick: "$onClickRow", _repObject:"$eventType|getValue" },
-                  TD(
-                          {class: "memberLabel userLabel",  $hasChildren: "$eventType.hasChildren"},
-                          "$eventType.label"
-                      ),
-                  TD(
-                      TAG("$eventType.tag", {object: "$eventType|getValue"})
-                  )
-                )
+              TBODY({class: "eventInfoTBody"},
+                TR({class: "eventInfoHeaderRow"},
+                        TH({class: "headerCell alphaValue"},
+                                DIV({class: "headerCellBox"},
+                                    $STR("Event Type")
+                                )
+                            ),
+                            TH({class: "headerCell alphaValue"},
+                                    DIV({class: "headerCellBox"},
+                                        $STR("Element\\.Listener")
+                                    )
+                                )
+                        ),
+                FOR("boundEventListeners", "$object|getBoundEventInfosArray",
+                    TR(
+                      { class: "memberRow"},
+                      TD( {class: "memberLabel userLabel"}, "$boundEventListeners.eventType" ),
+                      TD({class: "boundEventListenerInfoCell"},
+                          FOR("info", "$boundEventListeners.infos",
+                              TAG("$boundEventListeners.tag", {object: "$info"})
+                          )
+                      )
+                    )
+                 )
               )
             ),
 
-        getEventsByType: function(object) // key type, value array of BoundEventInfo
+        getBoundEventInfosArray: function(boundEventListenersByType) // convert from hashTable keyed by eventType to array
         {
-             FBTrace.sysout("getEventsByType had type "+typeof(object), object);
+            FBTrace.sysout("getBoundEventInfosArray had type "+typeof(boundEventListenersByType), boundEventListenersByType);
+
             var members = [];
-            for (var p in object)
+            for (var eventType in boundEventListenersByType)
             {
-                if (object.hasOwnProperty(p))
+                if (boundEventListenersByType.hasOwnProperty(eventType))
                 {
-                    var value = object[p];
-                    FBTrace.sysout("getEventsByType "+p+" had type "+typeof(value), value);
-                    var member = {label: p, value: object[p], tag: BoundEventListenerInfoRep.tag};
-                    if (value instanceof Array)
-                    {
-                        member.tag = FirebugReps.Arr.tag;
-                        member.hasChildren = true;
-                    }
+                    var boundEventListenerInfos = boundEventListenersByType[eventType];
+                    FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type "+typeof(boundEventListenerInfos), boundEventListenerInfos);
+                    var member = {eventType: eventType, infos: boundEventListenerInfos, tag: BoundEventListenerInfoRep.tag};
                     members.push(member);
                 }
             }
-            FBTrace.sysout("getEventsByType members "+members.length, members);
+            FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
             return members;
         },
 
-        getValue: function(eventType)
+        getEventListnerInfos: function(boundEventListeners)
         {
             FBTrace.sysout("getValue ", eventType);
             return eventType.value;
@@ -276,7 +287,7 @@ EventPanel.prototype  = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         this.context = context;
-        Firebug.DOMBasePanel.prototype.initialize.apply(this, arguments);
+        Firebug.Panel.initialize.apply(this, arguments);
     },
 
     getEventListenerService: function()
@@ -300,7 +311,7 @@ EventPanel.prototype  = extend(Firebug.Panel,
     show: function(state)
     {
         var root = this.context.window.document.documentElement;
-        this.selection = this.getEventInfosRecursive(root);
+        this.selection = this.getBoundEventInfos(root);
         this.rebuild(true);
     },
 
@@ -308,7 +319,10 @@ EventPanel.prototype  = extend(Firebug.Panel,
     {
         try
         {
-            EventInfoTemplate.tag.replace({object: this.selection}, this.panelNode, EventInfoTemplate);
+            if (this.selection)
+                EventInfoTemplate.tag.replace({object: this.selection}, this.panelNode, EventInfoTemplate);
+            else
+                if (FBTrace.DBG_EVENTS) FBTrace.sysout("event.rebuild no this.selection");
         }
         catch(e)
         {
@@ -321,7 +335,8 @@ EventPanel.prototype  = extend(Firebug.Panel,
         FBTrace.sysout("event getObjectPath", object);
     },
     /***************************************************************************************/
-    getEventInfosRecursive: function(elt)
+    // walk down from elt, build an (elt, info) pair for each listenerInfo, bin all pairs by type (eg 'click')
+    getBoundEventInfos: function(elt)
     {
         var walker = this.context.window.document.createTreeWalker(elt, SHOW_ALL, null, true);
 
@@ -330,23 +345,18 @@ EventPanel.prototype  = extend(Firebug.Panel,
         for (; node; node = walker.nextNode())
         {
             if(FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getEventInfosRecursive "+node, node);
+                FBTrace.sysout("getBoundEventInfos "+node, node);
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
-                var entry = new BoundEventListenerInfo( elt,  info);
+                var entry = new BoundEventListenerInfo(elt,  info);
                 if (eventInfos.hasOwnProperty(info.type))
-                {
-                    if ( eventInfos[info.type] instanceof Array)
-                        eventInfos[info.type].push(entry);  // more than two
-                    else
-                        eventInfos[info.type] = [eventInfos[info.type], entry]; // two handlers
-                }
+                    eventInfos[info.type].push(entry);
                 else
-                    eventInfos[info.type] = entry;  // one handler of this type
+                    eventInfos[info.type] = [entry];  // one handler of this type
                 FBTrace.sysout("buildEventInfos "+info.type, eventInfos[info.type]);
             });
         }
-        FBTrace.sysout("getEventInfosRecursive eventInfos", eventInfos);
+        FBTrace.sysout("getBoundEventInfos eventInfos", eventInfos);
         return eventInfos;
     },
 
@@ -367,7 +377,12 @@ EventPanel.prototype  = extend(Firebug.Panel,
                 fnTakesEltInfo(elt, anInfo);
             }
         }
-    }
+    },
+
+    supportsObject: function(object)
+    {
+        return 0;
+    },
 
 });
 
