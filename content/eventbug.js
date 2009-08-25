@@ -1,6 +1,6 @@
-window.dump("***************** eventbug.js compiling***********************\n");
+/* See license.txt for terms of usage */
 FBL.ns(function() { with (FBL) {
-    window.dump("***************** eventbug.js running***********************\n");
+     
 
 const Ci = Components.interfaces;
 
@@ -61,6 +61,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          if (!listener)
              return "";
          var fnAsString = listener.stringValue;
+         if (!fnAsString)
+             return "(native listener)";
+
          var start = fnAsString.indexOf('{');
          var end = fnAsString.lastIndexOf('}') + 1;
          var fncName = cropString(fnAsString.substring(start, end), 37);
@@ -72,6 +75,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
      getFunction: function(listener)
      {
+         if (!listener.stringValue)
+             return "(native listener)";
+
          var script = findScriptForFunctionInContext(FirebugContext, listener.stringValue);
          if (script)
          {
