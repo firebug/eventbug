@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 FBL.ns(function() { with (FBL) {
-     
+
 
 const Ci = Components.interfaces;
 
@@ -67,7 +67,8 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          var start = fnAsString.indexOf('{');
          var end = fnAsString.lastIndexOf('}') + 1;
          var fncName = cropString(fnAsString.substring(start, end), 37);
-         FBTrace.sysout("getHandlerSummary "+fncName, listener);
+         if (FBTrace.DBG_EVENTS)
+             FBTrace.sysout("getHandlerSummary "+fncName, listener);
          return fncName;
      },
 
@@ -82,7 +83,8 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          if (script)
          {
              var fn = script.functionObject.getWrappedValue();
-             FBTrace.sysout("getFunction found script "+script.tag+" for "+listener.stringValue, fn);
+             if (FBTrace.DBG_EVENTS)
+                 FBTrace.sysout("getFunction found script "+script.tag+" for "+listener.stringValue, fn);
              return fn;
          }
          else
@@ -119,7 +121,8 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
              });
              if (fnc)
                  return fnc;
-             FBTrace.sysout("getFunction no find "+fnAsString);
+             if (FBTrace.DBG_EVENTS)
+                 FBTrace.sysout("getFunction no find "+fnAsString);
          }
          return function(){};
      },
@@ -203,7 +206,8 @@ var EventInfoTemplate = domplate
 
         getBoundEventInfosArray: function(boundEventListenersByType) // convert from hashTable keyed by eventType to array
         {
-            FBTrace.sysout("getBoundEventInfosArray had type "+typeof(boundEventListenersByType), boundEventListenersByType);
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("getBoundEventInfosArray had type "+typeof(boundEventListenersByType), boundEventListenersByType);
 
             var members = [];
             for (var eventType in boundEventListenersByType)
@@ -211,18 +215,21 @@ var EventInfoTemplate = domplate
                 if (boundEventListenersByType.hasOwnProperty(eventType))
                 {
                     var boundEventListenerInfos = boundEventListenersByType[eventType];
-                    FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type "+typeof(boundEventListenerInfos), boundEventListenerInfos);
+                    if (FBTrace.DBG_EVENTS)
+                        FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type "+typeof(boundEventListenerInfos), boundEventListenerInfos);
                     var member = {eventType: eventType, infos: boundEventListenerInfos, tag: BoundEventListenerInfoRep.tag};
                     members.push(member);
                 }
             }
-            FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
             return members;
         },
 
         getEventListnerInfos: function(boundEventListeners)
         {
-            FBTrace.sysout("getValue ", eventType);
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("getValue ", eventType);
             return eventType.value;
         },
 
@@ -234,7 +241,7 @@ var EventInfoTemplate = domplate
         },
 
         onClickRow: function(event)
-        {FBTrace.sysout("onClickRow", event);
+        {
             if (isLeftClick(event))
             {
                 var row = getAncestorByClass(event.target, "memberRow");
@@ -260,14 +267,14 @@ var EventInfoTemplate = domplate
         {
             toggleClass(row, "opened");
             var opened = hasClass(row, "opened");
-            FBTrace.sysout("toggleRow opened "+opened, row);
 
             if (hasClass(row, "opened"))
             {
                 var boundListeners = row.repObject;
                 if (!boundListeners && row.wrappedJSObject)
                     boundListeners = row.wrappedJSObject.repObject;
-                FBTrace.sysout("toggleRow boundListeners", boundListeners);
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("toggleRow boundListeners", boundListeners);
                 var bodyRow = this.rowTag.insertRows({boundListeners: boundListeners}, row, this)[0];
             }
             else
@@ -308,7 +315,8 @@ EventPanel.prototype  = extend(Firebug.Panel,
             }
             catch(exc)
             {
-                FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
+                if (FBTrace.DBG_ERRORS)
+                    FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
             }
         }
         return this.eventListenerService;
@@ -332,13 +340,15 @@ EventPanel.prototype  = extend(Firebug.Panel,
         }
         catch(e)
         {
-            FBTrace.sysout("Event.rebuild fails "+e, e);
+            if (FBTrace.DBG_ERRORS)
+                FBTrace.sysout("Event.rebuild fails "+e, e);
         }
     },
 
     getObjectPath: function(object)
     {
-        FBTrace.sysout("event getObjectPath", object);
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("event getObjectPath NOOP", object);
     },
     /***************************************************************************************/
     // walk down from elt, build an (elt, info) pair for each listenerInfo, bin all pairs by type (eg 'click')
@@ -359,10 +369,12 @@ EventPanel.prototype  = extend(Firebug.Panel,
                     eventInfos[info.type].push(entry);
                 else
                     eventInfos[info.type] = [entry];  // one handler of this type
-                FBTrace.sysout("buildEventInfos "+info.type, eventInfos[info.type]);
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("buildEventInfos "+info.type, eventInfos[info.type]);
             });
         }
-        FBTrace.sysout("getBoundEventInfos eventInfos", eventInfos);
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getBoundEventInfos eventInfos", eventInfos);
         return eventInfos;
     },
 
