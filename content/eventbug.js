@@ -158,160 +158,6 @@ function BoundEventListenerInfo(element, eventInfo)
 
 // ************************************************************************************************
 
-/**
- * @domplate: Temlate for basic layout of the {@link EventPanel} panel.
- */
-var EventInfoTemplate = domplate(Firebug.Rep,
-{
-    tag:
-        TABLE(
-            TBODY({"class": "eventInfoTBody"},
-                TR({"class": "eventInfoHeaderRow"},
-                    TH({"class": "headerCell alphaValue"},
-                        DIV({"class": "headerCellBox"},
-                            $STR("Event Type")
-                        )
-                    ),
-                    TH({"class": "headerCell alphaValue"},
-                        DIV({"class": "headerCellBox"},
-                            $STR("Element\\.Listener")
-                        )
-                    )
-                ),
-                FOR("boundEventListeners", "$object|getBoundEventInfosArray",
-                    TR({"class": "memberRow"},
-                        TD({"class": "memberLabel userLabel"},
-                            "$boundEventListeners.eventType"
-                        ),
-                        TD({"class": "boundEventListenerInfoCell"},
-                            FOR("info", "$boundEventListeners.infos",
-                                TAG("$boundEventListeners.tag", {object: "$info"})
-                            )
-                        )
-                    )
-                )
-            )
-        ),
-
-    /**
-     * Convert from hashTable keyed by eventType to array
-     */
-    getBoundEventInfosArray: function(boundEventListenersByType)
-    {
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getBoundEventInfosArray had type " + typeof(boundEventListenersByType),
-                boundEventListenersByType);
-
-        var members = [];
-        for (var eventType in boundEventListenersByType)
-        {
-            if (boundEventListenersByType.hasOwnProperty(eventType))
-            {
-                var boundEventListenerInfos = boundEventListenersByType[eventType];
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type " +
-                        typeof(boundEventListenerInfos), boundEventListenerInfos);
-
-                var member = {eventType: eventType, infos: boundEventListenerInfos,
-                    tag: BoundEventListenerInfoRep.tag};
-                members.push(member);
-            }
-        }
-
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
-        return members;
-    },
-
-    getEventListnerInfos: function(boundEventListeners)
-    {
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getValue ", eventType);
-        return eventType.value;
-    },
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
-
-    onClickRow: function(event)
-    {
-        if (isLeftClick(event))
-        {
-            var row = getAncestorByClass(event.target, "memberRow");
-            if (row)
-            {
-                this.toggleRow(row);
-                cancelEvent(event);
-            }
-        }
-    },
-
-    rowTag:
-        FOR("boundListener", "$boundListeners",
-            TR({"class": "memberRow", onclick: "$onClickRow", _repObject:"$boundListener"},
-                TD({"class": "memberLabel userLabel"}, "$boundListener.element"),
-                TD(
-                    TAG(EventListenerInfoRep.tag, {object: "$boundListener.listener"})
-                )
-            )
-        ),
-
-    toggleRow: function(row)
-    {
-        toggleClass(row, "opened");
-        var opened = hasClass(row, "opened");
-
-        if (hasClass(row, "opened"))
-        {
-            var boundListeners = row.repObject;
-            if (!boundListeners && row.wrappedJSObject)
-                boundListeners = row.wrappedJSObject.repObject;
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("toggleRow boundListeners", boundListeners);
-            var bodyRow = this.rowTag.insertRows({boundListeners: boundListeners}, row, this)[0];
-        }
-        else
-        {
-            row.parentNode.removeChild(row.nextSibling);
-        }
-    }
-});
-
-// ************************************************************************************************
-
-var BoundEventListenerInfoRep = domplate(Firebug.Rep,
-{
-    tag:
-        DIV({_repObject: "$object"},
-            TAG("$object.element|getNaturalTag", {object: "$object.element"}),
-            SPAN({"class": "arrayComma"}, "."),
-            TAG("$object.listener|getNaturalTag", {object: "$object.listener"} )
-        ),
-
-    shortTag:
-        SPAN({_repObject: "$object"},
-            TAG("$object.element|getNaturalTag", {object: "$object.element"})
-        ),
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
-
-    supportsObject: function(object)
-    {
-        return (object instanceof BoundEventListenerInfo)?10:0;
-    },
-});
-
-// ************************************************************************************************
-
 var EventListenerInfoRep = domplate(Firebug.Rep,
 {
      tag:
@@ -442,6 +288,164 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
             {label: "OpenInTab", command: bindFixed(this.openInTab, this, sourceLink) }
         ];
     }
+});
+
+// ************************************************************************************************
+
+/**
+ * @domplate: Temlate for basic layout of the {@link EventPanel} panel.
+ */
+var EventInfoTemplate = domplate(Firebug.Rep,
+{
+    tag:
+        TABLE(
+            TBODY({"class": "eventInfoTBody"},
+                TR({"class": "eventInfoHeaderRow"},
+                    TH({"class": "headerCell alphaValue"},
+                        DIV({"class": "headerCellBox"},
+                            $STR("Event Type")
+                        )
+                    ),
+                    TH({"class": "headerCell alphaValue"},
+                        DIV({"class": "headerCellBox"},
+                            $STR("Element\\.Listener")
+                        )
+                    )
+                ),
+                FOR("boundEventListeners", "$object|getBoundEventInfosArray",
+                    TR({"class": "memberRow"},
+                        TD({"class": "memberLabel userLabel"},
+                            "$boundEventListeners.eventType"
+                        ),
+                        TD({"class": "boundEventListenerInfoCell"},
+                            FOR("info", "$boundEventListeners.infos",
+                                TAG("$boundEventListeners.tag", {object: "$info"})
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+
+    /**
+     * Convert from hashTable keyed by eventType to array
+     */
+    getBoundEventInfosArray: function(boundEventListenersByType)
+    {
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getBoundEventInfosArray had type " + typeof(boundEventListenersByType),
+                boundEventListenersByType);
+
+        var members = [];
+        for (var eventType in boundEventListenersByType)
+        {
+            if (boundEventListenersByType.hasOwnProperty(eventType))
+            {
+                var boundEventListenerInfos = boundEventListenersByType[eventType];
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type " +
+                        typeof(boundEventListenerInfos), boundEventListenerInfos);
+
+                var member = {eventType: eventType, infos: boundEventListenerInfos,
+                    tag: BoundEventListenerInfoRep.tag};
+                members.push(member);
+            }
+        }
+
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
+        return members;
+    },
+
+    getEventListnerInfos: function(boundEventListeners)
+    {
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getValue ", eventType);
+        return eventType.value;
+    },
+
+    getNaturalTag: function(value)
+    {
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
+    },
+
+    onClickRow: function(event)
+    {
+        if (isLeftClick(event))
+        {
+            var row = getAncestorByClass(event.target, "memberRow");
+            if (row)
+            {
+                this.toggleRow(row);
+                cancelEvent(event);
+            }
+        }
+    },
+
+    rowTag:
+        FOR("boundListener", "$boundListeners",
+            TR({"class": "memberRow", onclick: "$onClickRow", _repObject:"$boundListener"},
+                TD({"class": "memberLabel userLabel"}, "$boundListener.element"),
+                TD(
+                    TAG(EventListenerInfoRep.tag, {object: "$boundListener.listener"})
+                )
+            )
+        ),
+
+    toggleRow: function(row)
+    {
+        toggleClass(row, "opened");
+        var opened = hasClass(row, "opened");
+
+        if (hasClass(row, "opened"))
+        {
+            var boundListeners = row.repObject;
+            if (!boundListeners && row.wrappedJSObject)
+                boundListeners = row.wrappedJSObject.repObject;
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("toggleRow boundListeners", boundListeners);
+            var bodyRow = this.rowTag.insertRows({boundListeners: boundListeners}, row, this)[0];
+        }
+        else
+        {
+            row.parentNode.removeChild(row.nextSibling);
+        }
+    }
+});
+
+// ************************************************************************************************
+
+var BoundEventListenerInfoRep = domplate(Firebug.Rep,
+{
+    tag:
+        DIV({_repObject: "$object"},
+            TAG("$object.element|getNaturalTag",
+                {object: "$object.element"}
+            ),
+            SPAN({"class": "arrayComma"}, "."),
+            TAG("$object.listener|getNaturalTag",
+                {object: "$object.listener"}
+            )
+        ),
+
+    shortTag:
+        SPAN({_repObject: "$object"},
+            TAG("$object.element|getNaturalTag", {object: "$object.element"})
+        ),
+
+    getNaturalTag: function(value)
+    {
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
+    },
+
+    supportsObject: function(object)
+    {
+        return (object instanceof BoundEventListenerInfo)?10:0;
+    },
 });
 
 // ************************************************************************************************
