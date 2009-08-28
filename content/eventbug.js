@@ -65,9 +65,20 @@ EventPanel.prototype = extend(Firebug.Panel,
 
     show: function(state)
     {
+        Firebug.Panel.show.apply(this, arguments);
+
+        this.showToolbarButtons("fbEventButtons", true);
+
         var root = this.context.window.document.documentElement;
         this.selection = this.getBoundEventInfos(root);
         this.rebuild(true);
+    },
+
+    hide: function()
+    {
+        Firebug.Panel.hide.apply(this, arguments);
+
+        this.showToolbarButtons("fbEventButtons", false);
     },
 
     /**
