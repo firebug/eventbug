@@ -27,6 +27,14 @@ EventPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
+
+        // Make sure the stylesheet isn't appended twice.
+        if (!$("eventBugStyles", doc))
+        {
+            var styleSheet = createStyleSheet(doc, "chrome://eventbug/skin/eventbug.css");
+            styleSheet.setAttribute("id", "eventBugStyles");
+            addStyleSheet(doc, styleSheet);
+        }
     },
 
     initializeNode: function()
@@ -298,7 +306,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 var EventInfoTemplate = domplate(Firebug.Rep,
 {
     tag:
-        TABLE(
+        TABLE({"class": "eventInfoTable", cellpadding: 0, cellspacing: 0},
             TBODY({"class": "eventInfoTBody"},
                 TR({"class": "eventInfoHeaderRow"},
                     TH({"class": "headerCell alphaValue"},
@@ -498,6 +506,8 @@ function dumpEvents()
 // ************************************************************************************************
 // Registration
 
+// xxxHonza: stylesheet registration should be as follows:
+//Firebug.registerStylesheet("chrome://eventbug/skin/eventbug.css");
 Firebug.registerPanel(EventPanel);
 Firebug.registerRep(EventListenerInfoRep);
 Firebug.registerRep(BoundEventListenerInfoRep);

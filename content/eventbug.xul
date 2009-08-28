@@ -1,5 +1,8 @@
-<?xml version="1.0"?><overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<?xml version="1.0"?> 
+<!-- See license.txt for terms of usage -->
+
+<?xml-stylesheet href="chrome://eventbug/skin/eventbug.css"?>
+
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     <script src="chrome://eventbug/content/eventbug.js" type="application/x-javascript"/>
-
-
 </overlay>
