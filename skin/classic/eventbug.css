@@ -15,10 +15,6 @@
     background: #EFEFEF;
 }
 
-.eventRow > .eventCol {
-    text-align: center;
-}
-
 .eventRow > .eventTypeCol {
     text-align: left;
 }
@@ -58,4 +54,10 @@
 
 .eventScriptCol {
     font-family: Monaco, monospace;
+}
+
+/************************************************************************************************/
+
+.eventListenerInfo {
+    padding-left: 18px;
 }

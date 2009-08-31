@@ -13,6 +13,9 @@ var eventListenerService = null;
 
 // ************************************************************************************************
 
+// Register string bundle of this extension so, $STR method (implemented by Firebug)
+// can be used. Also, perform the registration here so, localized strings used
+// in template definitions can be resolved.
 Firebug.registerStringBundle("chrome://eventbug/locale/eventbug.properties");
 
 // ************************************************************************************************
@@ -32,10 +35,6 @@ EventPanel.prototype = extend(Firebug.Panel,
     {
         Firebug.Panel.initialize.apply(this, arguments);
         appendStylesheet(doc, "eventBugStyles");
-    },
-
-    initializeNode: function()
-    {
     },
 
     show: function(state)
@@ -211,9 +210,15 @@ EventElementPanel.prototype = extend(Firebug.Panel,
 
 // ************************************************************************************************
 
+/**
+ * @domplate This template is used to render content of Events side panel that is available
+ * within the HTML panel.
+ */
 var ElementListenerInfoRep = domplate(Firebug.Rep,
 {
-     tag:
+    inspectable: false,
+
+    tag:
         TABLE({"class": "eventInfoTable", cellpadding: 0, cellspacing: 0},
             TBODY(
                 FOR("listener", "$listeners",
@@ -245,7 +250,7 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
 
     getCapturing: function(listener)
     {
-        return $STR("eventbug.capturing") + "=" + listener.capturing;
+        return listener.capturing ? $STR("eventbug.capturing") : "";
     },
 
     getInfo: function(listener)
@@ -255,7 +260,7 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
         if (listener.allowsUntrusted)
             text += $STR("eventbug.allowsUntrusted");
 
-        if (listener.allowsUntrusted)
+        if (listener.inSystemEventGroup)
             text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
 
         return text + ")";
@@ -317,9 +322,10 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 {
      tag:
          SPAN(
-            A({"class": "objectLink objectLink-$linkToType", repObject: "$object|getFunction"},
+            A({"class": "objectLink objectLink-$linkToType",
+                _repObject: "$object|getFunction"},
                 "$object|getHandlerSummary"),
-                 SPAN("$object|getAttributes")
+                SPAN("$object|getAttributes")
             ),
 
      getAttributes: function(listener)
@@ -336,7 +342,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
          var fnAsString = listener.stringValue;
          if (!fnAsString)
-             return "(native listener)";
+             return $STR("eventbug.native_listener");
 
          var start = fnAsString.indexOf('{');
          var end = fnAsString.lastIndexOf('}') + 1;
@@ -455,25 +461,28 @@ var EventInfoTemplate = domplate(Firebug.Rep,
     tag:
         TABLE({"class": "eventInfoTable", cellpadding: 0, cellspacing: 0},
             TBODY({"class": "eventInfoTBody"},
-                TR({"class": "eventInfoHeaderRow"},
-                    TH({"class": "headerCell alphaValue"},
-                        DIV({"class": "headerCellBox"},
-                            $STR("Event Type")
-                        )
-                    ),
-                    TH({"class": "headerCell alphaValue"},
-                        DIV({"class": "headerCellBox"},
-                            $STR("Element\\.Listener")
+                FOR("boundEventListeners", "$object|getBoundEventInfosArray",
+                    TR({"class": "eventRow", onclick: "$onClickEventType",
+                        _repObject:"$boundEventListeners"},
+                        TD({"class": "eventTypeCol eventCol"},
+                            DIV({"class": "eventTypeLabel eventLabel"},
+                                "$boundEventListeners.eventType"
+                            )
+                        ),
+                        TD({"class": "boundEventListenerInfoCell"}
                         )
                     )
-                ),
-                FOR("boundEventListeners", "$object|getBoundEventInfosArray",
-                    TR({"class": "memberRow"},
-                        TD({"class": "memberLabel userLabel"},
-                            "$boundEventListeners.eventType"
-                        ),
-                        TD({"class": "boundEventListenerInfoCell"},
-                            FOR("info", "$boundEventListeners.infos",
+                )
+            )
+        ),
+
+    eventTypeBody:
+        TR({"class": "eventTypeBodyRow"},
+            TD({"class": "eventTypeBodyCol", colspan: 2},
+                TABLE({cellpadding: 0, cellspacing: 0},
+                    FOR("info", "$boundEventListeners.infos",
+                        TR({"class": "eventRow"},
+                            TD({"class": "eventCol"},
                                 TAG("$boundEventListeners.tag", {object: "$info"})
                             )
                         )
@@ -526,11 +535,11 @@ var EventInfoTemplate = domplate(Firebug.Rep,
         return tag;
     },
 
-    onClickRow: function(event)
+    onClickEventType: function(event)
     {
         if (isLeftClick(event))
         {
-            var row = getAncestorByClass(event.target, "memberRow");
+            var row = getAncestorByClass(event.target, "eventRow");
             if (row)
             {
                 this.toggleRow(row);
@@ -538,16 +547,6 @@ var EventInfoTemplate = domplate(Firebug.Rep,
             }
         }
     },
-
-    rowTag:
-        FOR("boundListener", "$boundListeners",
-            TR({"class": "memberRow", onclick: "$onClickRow", _repObject:"$boundListener"},
-                TD({"class": "memberLabel userLabel"}, "$boundListener.element"),
-                TD(
-                    TAG(EventListenerInfoRep.tag, {object: "$boundListener.listener"})
-                )
-            )
-        ),
 
     toggleRow: function(row)
     {
@@ -561,7 +560,8 @@ var EventInfoTemplate = domplate(Firebug.Rep,
                 boundListeners = row.wrappedJSObject.repObject;
             if (FBTrace.DBG_EVENTS)
                 FBTrace.sysout("toggleRow boundListeners", boundListeners);
-            var bodyRow = this.rowTag.insertRows({boundListeners: boundListeners}, row, this)[0];
+
+            this.eventTypeBody.insertRows({boundEventListeners: boundListeners}, row, this)[0];
         }
         else
         {
@@ -575,7 +575,7 @@ var EventInfoTemplate = domplate(Firebug.Rep,
 var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 {
     tag:
-        DIV({_repObject: "$object"},
+        DIV({"class": "eventListenerInfo", _repObject: "$object"},
             TAG("$object.element|getNaturalTag",
                 {object: "$object.element"}
             ),
