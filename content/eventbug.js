@@ -7,9 +7,13 @@ FBL.ns(function() { with (FBL) {
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-const nsIEventListenerInfo = Components.interfaces.nsIEventListenerInfo;
-
 const SHOW_ALL = Ci.nsIDOMNodeFilter.SHOW_ALL;
+
+var eventListenerService = null;
+
+// ************************************************************************************************
+
+Firebug.registerStringBundle("chrome://eventbug/locale/eventbug.properties");
 
 // ************************************************************************************************
 
@@ -22,45 +26,16 @@ EventPanel.prototype = extend(Firebug.Panel,
 /** @lends EventPanel */
 {
     name: "events",
-    title: "Events",
+    title: $STR("eventbug.Events"),
 
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
-
-        // Make sure the stylesheet isn't appended twice.
-        if (!$("eventBugStyles", doc))
-        {
-            var styleSheet = createStyleSheet(doc, "chrome://eventbug/skin/eventbug.css");
-            styleSheet.setAttribute("id", "eventBugStyles");
-            addStyleSheet(doc, styleSheet);
-        }
+        appendStylesheet(doc, "eventBugStyles");
     },
 
     initializeNode: function()
     {
-    },
-
-    /**
-     * Returns <code>@mozilla.org/eventlistenerservice;1</code> service. This method
-     * caches reference to the service when called the first time.
-     */
-    getEventListenerService: function()
-    {
-        if (!this.eventListenerService)
-        {
-            try
-            {
-                var eventListenerClass = Cc["@mozilla.org/eventlistenerservice;1"];
-                this.eventListenerService = eventListenerClass.getService(Ci.nsIEventListenerService);
-            }
-            catch (exc)
-            {
-                if (FBTrace.DBG_ERRORS)
-                    FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
-            }
-        }
-        return this.eventListenerService;
     },
 
     show: function(state)
@@ -144,7 +119,7 @@ EventPanel.prototype = extend(Firebug.Panel,
 
     appendEventInfos: function(elt, fnTakesEltInfo)
     {
-        var els = this.getEventListenerService();
+        var els = getEventListenerService();
         if (!els)
             return;
 
@@ -164,6 +139,167 @@ EventPanel.prototype = extend(Firebug.Panel,
     supportsObject: function(object)
     {
         return 0;
+    },
+});
+
+// ************************************************************************************************
+
+/**
+ * @panel Represents a side panel for the HTML panel. This panel displays list of associated
+ * event listeners for selected element.
+ */
+function EventElementPanel() {}
+EventElementPanel.prototype = extend(Firebug.Panel,
+/** @lends EventElementPanel */
+{
+    name: "ElementEvents",
+    title: $STR("eventbug.Events"),
+    parentPanel: "html",
+
+    initialize: function(context, doc)
+    {
+        Firebug.Panel.initialize.apply(this, arguments);
+        appendStylesheet(doc, "eventBugStyles");
+    },
+
+    show: function(state)
+    {
+        Firebug.Panel.show.apply(this, arguments);
+    },
+
+    supportsObject: function(object)
+    {
+        return false;
+    },
+
+    updateSelection: function(element)
+    {
+        Firebug.Panel.updateSelection.apply(this, arguments);
+
+        if (!(element instanceof Element))
+            return;
+
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("eventbug.updateSelection; " + element.localName);
+
+        var els = getEventListenerService();
+        if (!els)
+        {
+            FirebugReps.Warning.tag.replace({object:
+                $STR("eventbug.You need Firefox 3.7")},
+                this.panelNode);
+        }
+
+        var listeners = els.getListenerInfoFor(element);
+        if (listeners && listeners.length)
+        {
+            ElementListenerInfoRep.tag.replace({listeners: listeners}, this.panelNode);
+        }
+        else
+        {
+            FirebugReps.Warning.tag.replace({object:
+                $STR("eventbug.This Element has no listeners")},
+                this.panelNode);
+        }
+    },
+
+    getOptionsMenuItems: function()
+    {
+        return [];
+    }
+});
+
+// ************************************************************************************************
+
+var ElementListenerInfoRep = domplate(Firebug.Rep,
+{
+     tag:
+        TABLE({"class": "eventInfoTable", cellpadding: 0, cellspacing: 0},
+            TBODY(
+                FOR("listener", "$listeners",
+                    TR({"class": "eventRow", onclick: "$onClickRow", _repObject: "$listener"},
+                        TD({"class": "eventTypeCol eventCol"},
+                            DIV({"class": "eventLabel"},
+                                SPAN({"class": "eventTypeLabel eventLabel"},
+                                    "$listener.type"
+                                ),
+                                SPAN("&nbsp;"),
+                                SPAN({"class": "capturingLabel eventLabel"},
+                                    "$listener|getCapturing"
+                                ),
+                                SPAN("&nbsp;"),
+                                SPAN({"class": "infoLabel eventLabel"},
+                                    "$listener|getInfo"
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+       ),
+
+    scriptRow:
+        TR({"class": "eventScriptRow"},
+            TD({"class": "eventScriptCol", colspan: 1})
+        ),
+
+    getCapturing: function(listener)
+    {
+        return $STR("eventbug.capturing") + "=" + listener.capturing;
+    },
+
+    getInfo: function(listener)
+    {
+        var text = "(";
+
+        if (listener.allowsUntrusted)
+            text += $STR("eventbug.allowsUntrusted");
+
+        if (listener.allowsUntrusted)
+            text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
+
+        return text + ")";
+    },
+
+    onClickRow: function(event)
+    {
+        if (isLeftClick(event))
+        {
+            var row = getAncestorByClass(event.target, "eventRow");
+            if (row)
+            {
+                this.toggleRow(row);
+                cancelEvent(event);
+            }
+        }
+    },
+
+    toggleRow: function(row, forceOpen)
+    {
+        var opened = hasClass(row, "opened");
+        if (opened && forceOpen)
+            return;
+
+        toggleClass(row, "opened");
+
+        if (hasClass(row, "opened"))
+        {
+            var scriptRow = this.scriptRow.insertRows({}, row)[0];
+
+            var source = row.repObject.stringValue;
+
+            // xxxHonza: the source should preserve line endings
+            source = source.replace(/}/g, "\n}");
+            source = source.replace(/{/g, "{\n");
+
+            var lines = splitLines(source);
+            FirebugReps.SourceText.tag.replace({object: {lines: lines}},
+                scriptRow.firstChild);
+        }
+        else
+        {
+            row.parentNode.removeChild(row.nextSibling);
+        }
     },
 });
 
@@ -312,7 +448,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 // ************************************************************************************************
 
 /**
- * @domplate: Temlate for basic layout of the {@link EventPanel} panel.
+ * @domplate: Template for basic layout of the {@link EventPanel} panel.
  */
 var EventInfoTemplate = domplate(Firebug.Rep,
 {
@@ -468,15 +604,48 @@ var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 });
 
 // ************************************************************************************************
+// Helpers
+
+/**
+ * Returns <code>@mozilla.org/eventlistenerservice;1</code> service. This method
+ * caches reference to the service when called the first time.
+ */
+function getEventListenerService()
+{
+    if (!eventListenerService)
+    {
+        try
+        {
+            var eventListenerClass = Cc["@mozilla.org/eventlistenerservice;1"];
+            eventListenerService = eventListenerClass.getService(Ci.nsIEventListenerService);
+        }
+        catch (exc)
+        {
+            if (FBTrace.DBG_ERRORS)
+                FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
+        }
+    }
+    return eventListenerService;
+}
+
+function appendStylesheet(doc)
+{
+    // Make sure the stylesheet isn't appended twice.
+    if (!$("eventBugStyles", doc))
+    {
+        var styleSheet = createStyleSheet(doc, "chrome://eventbug/skin/eventbug.css");
+        styleSheet.setAttribute("id", "eventBugStyles");
+        addStyleSheet(doc, styleSheet);
+    }
+}
+
+// ************************************************************************************************
 // Tracing Helpers
 
 function dumpEvents()
 {
     try
     {
-        var eventListenerService = Components.classes["@mozilla.org/eventlistenerservice;1"]
-            .getService(Components.interfaces.nsIEventListenerService);
-
         var elt = document.getElementById("button");
         var info = eventListenerService.getListenerInfoFor(elt);
         if (info instanceof Components.interfaces.nsIVariant)
@@ -494,7 +663,7 @@ function dumpEvents()
             for (var i = 0; i < info.length; i++)
             {
                 var anInfo = info[i];
-                if (anInfo instanceof Components.interfaces.nsIEventListenerInfo)
+                if (anInfo instanceof Ci.nsIEventListenerInfo)
                     output.heading("info["+i+"] "+anInfo);
                 for (var p in info[i])
                     output.heading('info['+i+"]["+p+']='+info[i][p]);
@@ -517,9 +686,11 @@ function dumpEvents()
 // ************************************************************************************************
 // Registration
 
-// xxxHonza: stylesheet registration should be as follows:
+// xxxHonza: what if the stylesheet registration would be as follows:
 //Firebug.registerStylesheet("chrome://eventbug/skin/eventbug.css");
+
 Firebug.registerPanel(EventPanel);
+Firebug.registerPanel(EventElementPanel);
 Firebug.registerRep(EventListenerInfoRep);
 Firebug.registerRep(BoundEventListenerInfoRep);
 

@@ -1,5 +1,61 @@
 /* See license.txt for terms of usage */
 
 .eventInfoTable {
-    width: 100%
+    width: 100%;
+    font-size: 11px;
+}
+
+/************************************************************************************************/
+
+.eventRow {
+    background: white;
+}
+
+.eventRow:hover {
+    background: #EFEFEF;
+}
+
+.eventRow > .eventCol {
+    text-align: center;
+}
+
+.eventRow > .eventTypeCol {
+    text-align: left;
+}
+
+.eventLabel {
+    padding: 2px 0 3px 0 !important;
+}
+
+.eventRow .eventTypeLabel {
+    background-image: url(chrome://firebug/skin/win/twistyClosed.png);
+    background-repeat: no-repeat;
+    background-position: 3px 4px;
+}
+
+.eventRow.opened .eventTypeLabel {
+    background-image: url(chrome://firebug/skin/win/twistyOpen.png);
+}
+
+.eventTypeLabel {
+    font-weight: bold;
+    padding-left: 18px !important;
+}
+
+.eventTypeLabel:hover {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+}
+
+.capturingLabel {
+    color: green;
+}
+
+.eventRow .infoLabel {
+    color: gray;
+}
+
+.eventScriptCol {
+    font-family: Monaco, monospace;
 }

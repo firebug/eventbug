@@ -6,10 +6,11 @@
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     <script src="chrome://eventbug/content/eventbug.js" type="application/x-javascript"/>
 
-    <commandset id="mainCommandSet"> 
+    <commandset id="mainCommandSet">
         <command id="cmd_eventShowNative" oncommand="alert('TBD')"/>
     </commandset> 
 
+    <!-- Toolbar for Events panel -->
     <toolbar id="fbToolbar" align="center" role="toolbar">
         <hbox id="fbToolbarInner" insertafter="fbNetButtons" flex="1" align="center">
             <hbox id="fbEventButtons" insertafter="fbNetButtons" collapsed="true">
