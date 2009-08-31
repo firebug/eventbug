@@ -12,7 +12,7 @@
 
     <toolbar id="fbToolbar" align="center" role="toolbar">
         <hbox id="fbToolbarInner" insertafter="fbNetButtons" flex="1" align="center">
-            <hbox id="fbEventButtons" collapsed="true">
+            <hbox id="fbEventButtons" insertafter="fbNetButtons" collapsed="true">
                 <toolbarbutton label="Show Native" class="toolbar-text-button"
                     tooltiptext="Show even native listeners" command="cmd_eventShowNative"/>
             </hbox>
