@@ -359,9 +359,9 @@ function BoundEventListenerInfo(element, eventInfo)
 var EventListenerInfoRep = domplate(Firebug.Rep,
 {
      tag:
-         SPAN(
+         SPAN({onclick: "$onClickFunction"},
             A({"class": "objectLink objectLink-$linkToType",
-                _repObject: "$object|getFunction"},
+                _repObject: "$object"},
                 "$object|getHandlerSummary"),
                 SPAN("$object|getAttributes")
             ),
@@ -391,61 +391,60 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          return fncName;
      },
 
+     onClickFunction: function(event)
+     {
+         if (FBTrace.DBG_EVENTS)
+             FBTrace.sysout("onClickFunction, "+event, event);
+
+         if (isLeftClick(event))
+         {
+             var row = getAncestorByClass(event.target, "objectLink-function");
+             if (row)
+             {
+                 FBTrace.sysout("onClickFunction, "+row.repObject, row);
+                 var listener = row.repObject;
+                 var link = EventListenerInfoRep.getListenerSourceLink(listener);
+                 if (link)
+                     Firebug.chrome.select(link);
+                 cancelEvent(event);
+             }
+         }
+     },
+
      reFunctionName: /unction\s*([^\(]*)/,
 
-     getFunction: function(listener)
+     getListenerSourceLink: function(listener)
      {
         if (!listener.stringValue)
             return "(native listener)";
 
-        var script = findScriptForFunctionInContext(FirebugContext, listener.stringValue);
-        if (script)
-        {
-            var fn = script.functionObject.getWrappedValue();
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getFunction found script "+script.tag+" for "+listener.stringValue, fn);
-            return fn;
-        }
-        else
-        {
-            var fnAsString = listener.stringValue;
-            var m = this.reFunctionName.exec(fnAsString);
-            if (m)
-                var seekingName = m[1];
+        var context = FirebugContext;
 
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getFunction seeking "+seekingName+" the name from "+fnAsString);
-
-            var fnc = forEachFunction(FirebugContext, function seek(script, fn)
+        var listenerSource = listener.stringValue;
+        var matchingScript = forEachFunction(context, function findMatchingScript(script, aFunction, sourceFile)
+        {
+            if (aFunction['toSource'] && typeof(aFunction['toSource']) == "function")
             {
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("getFunction trying "+fn.toString());
-                var m =  EventListenerInfoRep.reFunctionName.exec(fn.toString());
-                if (m)
-                    var tryingName = m[1];
-                if (seekingName && tryingName && tryingName == seekingName)
+                try
                 {
-                    if (FBTrace.DBG_EVENTS)
-                        FBTrace.sysout("getFunction found same name "+seekingName);
-                    return fn;
+                    var tfs = aFunction.toSource();
+                } catch (etfs) {
+                    FBTrace.sysout("unwrapped.toSource fails for unwrapped: "+etfs, aFunction);
                 }
-                if (fn.toString() == fnAsString)
-                    return fn;
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("getFunction also trying "+script.functionObject.stringValue);
+                // FBTrace.sysout("getListenerSourceLink trying "+script.tag+" "+tfs, [tfs, listenerSource]);
 
-                if (script.functionObject.stringValue == fnAsString)
-                    return fn;
-
-                return false;
-             });
-
-             if (fnc)
-                return fnc;
-             if (FBTrace.DBG_EVENTS)
-                 FBTrace.sysout("getFunction no find "+fnAsString);
-         }
-         return function(){};
+                if (tfs == listenerSource)
+                    return script;
+            }
+        });
+        if (matchingScript)
+        {
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("getListenerSourceLink found script "+matchingScript.tag+" for "+listener.stringValue);
+            return getSourceLinkForScript(matchingScript, context);
+        }
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getListenerSourceLink no match script in context "+FirebugContext.getName()+" for "+listener.stringValue, listener);
     },
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -601,7 +600,7 @@ var EventInfoTemplate = domplate(Firebug.Rep,
             if (FBTrace.DBG_EVENTS)
                 FBTrace.sysout("toggleRow boundListeners", boundListeners);
 
-            this.eventTypeBody.insertRows({boundEventListeners: boundListeners}, row, this)[0];
+            this.eventTypeBody.insertRows({boundEventListeners: boundListeners}, row);
         }
         else
         {
