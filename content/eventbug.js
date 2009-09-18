@@ -21,7 +21,7 @@ Firebug.registerStringBundle("chrome://eventbug/locale/eventbug.properties");
 // ************************************************************************************************
 
 /**
- * @panel Represents an Events panel displaying a list registered DOM event listeners.
+ * @panel Represents an Events panel displaying a list of registered DOM event listeners.
  * The list is grouped by event types.
  */
 function EventPanel() {}
@@ -480,10 +480,12 @@ var EventInfoTemplate = domplate(Firebug.Rep,
         TR({"class": "eventTypeBodyRow"},
             TD({"class": "eventTypeBodyCol", colspan: 2},
                 TABLE({cellpadding: 0, cellspacing: 0},
-                    FOR("info", "$boundEventListeners.infos",
-                        TR({"class": "eventRow"},
-                            TD({"class": "eventCol"},
-                                TAG("$boundEventListeners.tag", {object: "$info"})
+                    TBODY(
+                        FOR("info", "$boundEventListeners.infos",
+                            TR({"class": "eventRow"},
+                                TD({"class": "eventCol"},
+                                    TAG("$boundEventListeners.tag", {object: "$info"})
+                                )
                             )
                         )
                     )
