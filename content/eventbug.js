@@ -211,6 +211,44 @@ EventElementPanel.prototype = extend(Firebug.Panel,
 // ************************************************************************************************
 
 /**
+ * @panel
+ */
+function EventHTMLPanel() {}
+EventHTMLPanel.prototype = extend(Firebug.Panel,
+/** @lends EventHTMLPanel */
+{
+    name: "events-html",
+    title: "HTML",
+    parentPanel: "events",
+
+    initialize: function(context, doc)
+    {
+        Firebug.Panel.initialize.apply(this, arguments);
+    },
+});
+
+// ************************************************************************************************
+
+/**
+ * @panel
+ */
+function EventScriptPanel() {}
+EventScriptPanel.prototype = extend(Firebug.Panel,
+/** @lends EventHTMLPanel */
+{
+    name: "events-script",
+    title: "Script",
+    parentPanel: "events",
+
+    initialize: function(context, doc)
+    {
+        Firebug.Panel.initialize.apply(this, arguments);
+    },
+});
+
+// ************************************************************************************************
+
+/**
  * @domplate This template is used to render content of Events side panel that is available
  * within the HTML panel.
  */
@@ -693,6 +731,8 @@ function dumpEvents()
 
 Firebug.registerPanel(EventPanel);
 Firebug.registerPanel(EventElementPanel);
+Firebug.registerPanel(EventHTMLPanel);
+Firebug.registerPanel(EventScriptPanel);
 Firebug.registerRep(EventListenerInfoRep);
 Firebug.registerRep(BoundEventListenerInfoRep);
 
