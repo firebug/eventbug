@@ -100,8 +100,13 @@ EventPanel.prototype = extend(Firebug.Panel,
         {
             if(FBTrace.DBG_EVENTS)
                 FBTrace.sysout("getBoundEventInfos "+node, node);
+            if (node.firebugIgnore)
+                continue;
+
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
+                if (elt.firebugIgnore)
+                    continue;
                 var entry = new BoundEventListenerInfo(elt,  info);
                 if (eventInfos.hasOwnProperty(info.type))
                     eventInfos[info.type].push(entry);
