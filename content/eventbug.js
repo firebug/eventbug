@@ -106,7 +106,8 @@ EventPanel.prototype = extend(Firebug.Panel,
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
                 if (elt.firebugIgnore)
-                    continue;
+                    return;
+
                 var entry = new BoundEventListenerInfo(elt,  info);
                 if (eventInfos.hasOwnProperty(info.type))
                     eventInfos[info.type].push(entry);
