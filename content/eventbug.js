@@ -384,7 +384,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          if (!listener)
              return "";
 
-         var fnAsString = listener.stringValue;
+         var fnAsString = listener.toSource();
          if (!fnAsString)
              return $STR("eventbug.native_listener");
 
@@ -421,13 +421,50 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
      getListenerSourceLink: function(listener)
      {
-        if (!listener.stringValue)
-            return "(native listener)";
+        //if (!listener.toSource())
+        //    return "(native listener)";
 
-        var context = FirebugContext;
+        var fnValue = listener.getDebugObject();
 
-        var listenerSource = listener.stringValue;
-        var matchingScript = forEachFunction(context, function findMatchingScript(script, aFunction, sourceFile)
+        //if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getListenerSourceLink found fnValue "+fnValue);
+
+        if (fnValue instanceof Ci.jsdIValue)
+        {
+            var script = fnValue.script; //
+            FBTrace.sysout("getListenerSourceLink got jsdIValue, script is "+script?script.tag:"undefined");
+            return getSourceLinkForScript(script, FirebugContext);
+        }
+        else
+        {
+            FBTrace.sysout("getListenerSourceLink fnValue NOT a jsdIValue", fnValue);
+        }
+
+        var contexts = TabWatcher.contexts;  // chromebug
+        if (!isSystemURL(FirebugContext.getName()))
+            contexts = [FirebugContext]; // Firebug
+
+        for (var i = 0; i < contexts.length; i++)
+        {
+            var context = contexts[i];
+            var listenerSource = listener.toSource();
+            var matchingScript = this.getListenerSourceLinkByContext(listenerSource, context);
+
+            if (matchingScript)
+            {
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("getListenerSourceLink found script "+matchingScript.tag+" for "+listener.stringValue);
+                return getSourceLinkForScript(matchingScript, context);
+            }
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("getListenerSourceLink no match script in context "+context.getName()+" for "+listener.stringValue, listener);
+        }
+
+     },
+
+     getListenerSourceLinkByContext: function(listenerSource, context)
+     {
+        return forEachFunction(context, function findMatchingScript(script, aFunction, sourceFile)
         {
             if (aFunction['toSource'] && typeof(aFunction['toSource']) == "function")
             {
@@ -435,7 +472,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
                 {
                     var tfs = aFunction.toSource();
                 } catch (etfs) {
-                    FBTrace.sysout("unwrapped.toSource fails for unwrapped: "+etfs, aFunction);
+                    FBTrace.sysout("aFunction.toSource fails for unwrapped: "+etfs, aFunction);
                 }
                 // FBTrace.sysout("getListenerSourceLink trying "+script.tag+" "+tfs, [tfs, listenerSource]);
 
@@ -443,15 +480,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
                     return script;
             }
         });
-        if (matchingScript)
-        {
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getListenerSourceLink found script "+matchingScript.tag+" for "+listener.stringValue);
-            return getSourceLinkForScript(matchingScript, context);
-        }
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getListenerSourceLink no match script in context "+FirebugContext.getName()+" for "+listener.stringValue, listener);
-    },
+     },
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
