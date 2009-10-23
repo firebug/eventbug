@@ -128,7 +128,7 @@ EventPanel.prototype = extend(Firebug.Panel,
         if (!els)
             return;
 
-        var infos = els.getListenerInfoFor(elt);
+        var infos = els.getListenerInfoFor(elt, {});
         for (var i = 0; i < infos.length; i++)
         {
             var anInfo = infos[i];
@@ -195,7 +195,7 @@ EventElementPanel.prototype = extend(Firebug.Panel,
                 this.panelNode);
         }
 
-        var listeners = els.getListenerInfoFor(element);
+        var listeners = els.getListenerInfoFor(element, {});
         if (listeners && listeners.length)
         {
             ElementListenerInfoRep.tag.replace({listeners: listeners}, this.panelNode);
@@ -335,7 +335,7 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
         {
             var scriptRow = this.scriptRow.insertRows({}, row)[0];
 
-            var source = row.repObject.stringValue;
+            var source = EventListenerInfoRep.getSource(row.repObject);
 
             // xxxHonza: the source should preserve line endings
             source = source.replace(/}/g, "\n}");
@@ -384,9 +384,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
          if (!listener)
              return "";
 
-         var fnAsString = listener.toSource();
-         if (!fnAsString)
-             return $STR("eventbug.native_listener");
+         var fnAsString = this.getSource(listener);
 
          var start = fnAsString.indexOf('{');
          var end = fnAsString.lastIndexOf('}') + 1;
@@ -419,69 +417,47 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
      reFunctionName: /unction\s*([^\(]*)/,
 
+     getScriptForListenerInfo: function(listenerInfo)
+     {
+         var fn = listenerInfo.getDebugObject();
+         if (fn && fn instanceof Ci.jsdIValue)
+         {
+             var script = fn.script;
+             return script;
+         }
+         if (FBTrace.DBG_EVENTS)
+             FBTrace.sysout("getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+fn+ "in "+context.getName()+" for "+this.getSource(listenerInfo),{fn: fn, listener: listener});
+     },
+
      getListenerSourceLink: function(listener)
      {
-        //if (!listener.toSource())
-        //    return "(native listener)";
+         var script = this.getScriptForListenerInfo(listener);
+         if (script)
+         {
+             var contexts = TabWatcher.contexts;  // chromebug
+             if (!isSystemURL(FirebugContext.getName()))
+                 contexts = [FirebugContext]; // Firebug
 
-        var fnValue = listener.getDebugObject();
+             for (var i = 0; i < contexts.length; i++)
+             {
+                 var context = contexts[i];
 
-        //if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getListenerSourceLink found fnValue "+fnValue);
-
-        if (fnValue instanceof Ci.jsdIValue)
-        {
-            var script = fnValue.script; //
-            FBTrace.sysout("getListenerSourceLink got jsdIValue, script is "+script?script.tag:"undefined");
-            return getSourceLinkForScript(script, FirebugContext);
-        }
-        else
-        {
-            FBTrace.sysout("getListenerSourceLink fnValue NOT a jsdIValue", fnValue);
-        }
-
-        var contexts = TabWatcher.contexts;  // chromebug
-        if (!isSystemURL(FirebugContext.getName()))
-            contexts = [FirebugContext]; // Firebug
-
-        for (var i = 0; i < contexts.length; i++)
-        {
-            var context = contexts[i];
-            var listenerSource = listener.toSource();
-            var matchingScript = this.getListenerSourceLinkByContext(listenerSource, context);
-
-            if (matchingScript)
-            {
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("getListenerSourceLink found script "+matchingScript.tag+" for "+listener.stringValue);
-                return getSourceLinkForScript(matchingScript, context);
-            }
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getListenerSourceLink no match script in context "+context.getName()+" for "+listener.stringValue, listener);
-        }
-
+                 var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, script);
+                 if (sourceFile)
+                     return getSourceLinkForScript(script, context);
+             }
+         }
+         if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getListenerSourceLink FAILS:  script "+script+ "in "+context.getName()+" for "+this.getSource(listener),{script: script, listener: listener});
      },
 
-     getListenerSourceLinkByContext: function(listenerSource, context)
+     getSource: function(listenerInfo)
      {
-        return forEachFunction(context, function findMatchingScript(script, aFunction, sourceFile)
-        {
-            if (aFunction['toSource'] && typeof(aFunction['toSource']) == "function")
-            {
-                try
-                {
-                    var tfs = aFunction.toSource();
-                } catch (etfs) {
-                    FBTrace.sysout("aFunction.toSource fails for unwrapped: "+etfs, aFunction);
-                }
-                // FBTrace.sysout("getListenerSourceLink trying "+script.tag+" "+tfs, [tfs, listenerSource]);
-
-                if (tfs == listenerSource)
-                    return script;
-            }
-        });
+         var fnAsString = listenerInfo.toSource();
+         if (!fnAsString)
+             return $STR("eventbug.native_listener");
+         return fnAsString;
      },
-
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
     className: "nsIEventListenerInfo",
@@ -498,18 +474,18 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
     getTooltip: function(listener)
     {
-        return listener.fnAsString;
+        return this.getHandlerSummary(listener);
     },
 
-    inspectObject: function(listener, context)
+    inspectObject: function(listenerInfo, context)
     {
-        var script = findScriptForFunctionInContext(context, listener.fnAsString);
+        var script = getScriptForListenerInfo(listenerInfo);
 
         if (script)
             return context.chrome.select(script);
 
         // Fallback is to just open the view-source window on the file
-        var dataURL = getDataURLForContent(listener.fnAsString, context.window.location.toString());
+        var dataURL = getDataURLForContent(this.getSource(listenerInfo), context.window.location.toString());
         viewSource(dataURL, 1);
     },
 
@@ -743,7 +719,7 @@ function dumpEvents()
                     output.heading('info['+i+"]["+p+']='+info[i][p]);
                  s = "info["+i+"]";
                  s += " type: " + anInfo.type;
-                 s += ", stringValue: " + anInfo.stringValue;
+                 s += ", toSource(): " + EventListenerInfoRep.getSource(anInfo);
                  s += ", capturing:" + anInfo.capturing;
                  s += ", allowsUntrusted: " + anInfo.allowsUntrusted;
                  s += ", inSystemEventGroup: " + anInfo.inSystemEventGroup + "\n";
