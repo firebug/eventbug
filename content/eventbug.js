@@ -216,6 +216,19 @@ EventElementPanel.prototype = extend(Firebug.Panel,
 
 // ************************************************************************************************
 
+var BaseRep = domplate(Firebug.Rep,
+{
+    // xxxHonza: shouldn't this be in Firebug.Rep?
+    getNaturalTag: function(value)
+    {
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
+    }
+});
+
+// ************************************************************************************************
+
 /**
  * @panel
  */
@@ -301,7 +314,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
     }
 });
 
-var EventTargetChain = domplate(Firebug.Rep,
+var EventTargetChain = domplate(BaseRep,
 {
     tag:
         DIV({"style": "padding: 8px"},
@@ -310,14 +323,7 @@ var EventTargetChain = domplate(Firebug.Rep,
                     TAG("$element|getNaturalTag", {object: "$element"})
                 )
             )
-        ),
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
+        )
 });
 
 // ************************************************************************************************
@@ -326,7 +332,7 @@ var EventTargetChain = domplate(Firebug.Rep,
  * @domplate This template is used to render content of Events side panel that is available
  * within the HTML panel.
  */
-var ElementListenerInfoRep = domplate(Firebug.Rep,
+var ElementListenerInfoRep = domplate(BaseRep,
 {
     inspectable: false,
 
@@ -355,13 +361,6 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
         TR({"class": "eventScriptRow"},
             TD({"class": "eventScriptCol", colspan: 1})
         ),
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
 
     onClickRow: function(event)
     {
@@ -572,7 +571,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
 // ************************************************************************************************
 
-var BoundEventListenerInfoRep = domplate(Firebug.Rep,
+var BoundEventListenerInfoRep = domplate(BaseRep,
 {
     tag:
         DIV({"class": "eventListenerInfo", _repObject: "$object"},
@@ -590,13 +589,6 @@ var BoundEventListenerInfoRep = domplate(Firebug.Rep,
             TAG("$object.element|getNaturalTag", {object: "$object.element"})
         ),
 
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
-
     supportsObject: function(object)
     {
         return (object instanceof BoundEventListenerInfo)?10:0;
@@ -608,7 +600,7 @@ var BoundEventListenerInfoRep = domplate(Firebug.Rep,
 /**
  * @domplate: Template for basic layout of the {@link EventPanel} panel.
  */
-var EventInfoTemplate = domplate(Firebug.Rep,
+var EventInfoTemplate = domplate(BaseRep,
 {
     tag:
         TABLE({"class": "eventInfoTable", cellpadding: 0, cellspacing: 0},
@@ -689,13 +681,6 @@ var EventInfoTemplate = domplate(Firebug.Rep,
         if (FBTrace.DBG_EVENTS)
             FBTrace.sysout("getValue ", eventType);
         return eventType.value;
-    },
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
     },
 
     onClickEventType: function(event)
