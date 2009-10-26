@@ -417,7 +417,8 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
                 _repObject: "$object"},
                 "$object|getHandlerSummary"),
             SPAN("&nbsp;"),
-            SPAN({"class": "capturingLabel eventLabel"},
+            SPAN({"class": "capturingLabel eventLabel",
+                title: $STR("events.addEventListener had use Capturing")},
                 "$object|getCapturing"
             ),
             SPAN("&nbsp;"),
@@ -433,15 +434,15 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
     getInfo: function(listener)
     {
-        var text = "(";
+        var text = "";
 
-        if (listener.allowsUntrusted)
-            text += $STR("eventbug.allowsUntrusted");
+        if (!listener.allowsUntrusted)
+            text += $STR("eventbug.block_untrusted");
 
         if (listener.inSystemEventGroup)
             text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
 
-        return text + ")";
+        return text ? ("(" + text + ")") : "";
     },
 
     getHandlerSummary: function(listener)
