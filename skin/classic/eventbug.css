@@ -1,5 +1,8 @@
 /* See license.txt for terms of usage */
 
+.panelNode-ElementEvents {
+} 
+
 .eventInfoTable {
     width: 100%;
     font-size: 11px;
@@ -9,6 +12,7 @@
 
 .eventRow {
     background: white;
+    white-space: nowrap;
 }
 
 .eventRow:hover {
@@ -45,7 +49,7 @@
 }
 
 .capturingLabel {
-    color: green;
+    color: black;
 }
 
 .eventRow .infoLabel {

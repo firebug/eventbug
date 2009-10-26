@@ -273,12 +273,8 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
                                     "$listener.type"
                                 ),
                                 SPAN("&nbsp;"),
-                                SPAN({"class": "capturingLabel eventLabel"},
-                                    "$listener|getCapturing"
-                                ),
-                                SPAN("&nbsp;"),
-                                SPAN({"class": "infoLabel eventLabel"},
-                                    "$listener|getInfo"
+                                TAG("$listener|getNaturalTag",
+                                    {object: "$listener"}
                                 )
                             )
                         )
@@ -292,22 +288,11 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
             TD({"class": "eventScriptCol", colspan: 1})
         ),
 
-    getCapturing: function(listener)
+    getNaturalTag: function(value)
     {
-        return listener.capturing ? $STR("eventbug.capturing") : "";
-    },
-
-    getInfo: function(listener)
-    {
-        var text = "(";
-
-        if (listener.allowsUntrusted)
-            text += $STR("eventbug.allowsUntrusted");
-
-        if (listener.inSystemEventGroup)
-            text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
-
-        return text + ")";
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
     },
 
     onClickRow: function(event)
@@ -364,14 +349,32 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
             A({"class": "objectLink objectLink-$linkToType",
                 _repObject: "$object"},
                 "$object|getHandlerSummary"),
-                SPAN("$object|getAttributes")
+            SPAN("&nbsp;"),
+            SPAN({"class": "capturingLabel eventLabel"},
+                "$object|getCapturing"
             ),
+            SPAN("&nbsp;"),
+            SPAN({"class": "infoLabel eventLabel"},
+                "$object|getInfo"
+            )
+        ),
 
-    getAttributes: function(listener)
+    getCapturing: function(listener)
     {
-        return (listener.capturing?" Capturing ":"") +
-               (listener.allowsUntrusted?" Allows-Untrusted ":"") +
-               (listener.inSystemEventGroup?" System-Event-Group":"");
+        return listener.capturing ? $STR("eventbug.capturing") : "";
+    },
+
+    getInfo: function(listener)
+    {
+        var text = "(";
+
+        if (listener.allowsUntrusted)
+            text += $STR("eventbug.allowsUntrusted");
+
+        if (listener.inSystemEventGroup)
+            text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
+
+        return text + ")";
     },
 
     getHandlerSummary: function(listener)
@@ -383,7 +386,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
         var start = fnAsString.indexOf('{');
         var end = fnAsString.lastIndexOf('}') + 1;
-        var fncName = cropString(fnAsString.substring(start, end), 37);
+        var fncName = cropString(fnAsString.substring(start, end), 20);
         if (FBTrace.DBG_EVENTS)
             FBTrace.sysout("getHandlerSummary "+fncName, listener);
 
