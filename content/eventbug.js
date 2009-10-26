@@ -336,11 +336,6 @@ var ElementListenerInfoRep = domplate(Firebug.Rep,
             var scriptRow = this.scriptRow.insertRows({}, row)[0];
 
             var source = EventListenerInfoRep.getSource(row.repObject);
-
-            // xxxHonza: the source should preserve line endings
-            source = source.replace(/}/g, "\n}");
-            source = source.replace(/{/g, "{\n");
-
             var lines = splitLines(source);
             FirebugReps.SourceText.tag.replace({object: {lines: lines}},
                 scriptRow.firstChild);
@@ -364,104 +359,110 @@ function BoundEventListenerInfo(element, eventInfo)
 
 var EventListenerInfoRep = domplate(Firebug.Rep,
 {
-     tag:
-         SPAN({onclick: "$onClickFunction"},
+    tag:
+        SPAN({onclick: "$onClickFunction"},
             A({"class": "objectLink objectLink-$linkToType",
                 _repObject: "$object"},
                 "$object|getHandlerSummary"),
                 SPAN("$object|getAttributes")
             ),
 
-     getAttributes: function(listener)
-     {
-         return (listener.capturing?" Capturing ":"") +
-                (listener.allowsUntrusted?" Allows-Untrusted ":"") +
-                (listener.inSystemEventGroup?" System-Event-Group":"");
-     },
+    getAttributes: function(listener)
+    {
+        return (listener.capturing?" Capturing ":"") +
+               (listener.allowsUntrusted?" Allows-Untrusted ":"") +
+               (listener.inSystemEventGroup?" System-Event-Group":"");
+    },
 
-     getHandlerSummary: function(listener)
-     {
-         if (!listener)
-             return "";
+    getHandlerSummary: function(listener)
+    {
+        if (!listener)
+            return "";
 
-         var fnAsString = this.getSource(listener);
+        var fnAsString = this.getSource(listener);
 
-         var start = fnAsString.indexOf('{');
-         var end = fnAsString.lastIndexOf('}') + 1;
-         var fncName = cropString(fnAsString.substring(start, end), 37);
-         if (FBTrace.DBG_EVENTS)
-             FBTrace.sysout("getHandlerSummary "+fncName, listener);
+        var start = fnAsString.indexOf('{');
+        var end = fnAsString.lastIndexOf('}') + 1;
+        var fncName = cropString(fnAsString.substring(start, end), 37);
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getHandlerSummary "+fncName, listener);
 
-         return fncName;
-     },
+        return fncName;
+    },
 
-     onClickFunction: function(event)
-     {
-         if (FBTrace.DBG_EVENTS)
-             FBTrace.sysout("onClickFunction, "+event, event);
+    onClickFunction: function(event)
+    {
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("onClickFunction, "+event, event);
 
-         if (isLeftClick(event))
-         {
-             var row = getAncestorByClass(event.target, "objectLink-function");
-             if (row)
-             {
-                 FBTrace.sysout("onClickFunction, "+row.repObject, row);
-                 var listener = row.repObject;
-                 var link = EventListenerInfoRep.getListenerSourceLink(listener);
-                 if (link)
-                     Firebug.chrome.select(link);
-                 cancelEvent(event);
-             }
-         }
-     },
+        if (isLeftClick(event))
+        {
+            var row = getAncestorByClass(event.target, "objectLink-function");
+            if (row)
+            {
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("events.onClickFunction, "+row.repObject, row.repObject);
 
-     reFunctionName: /unction\s*([^\(]*)/,
+                var listener = row.repObject;
+                var link = EventListenerInfoRep.getListenerSourceLink(listener);
+                if (link)
+                    Firebug.chrome.select(link);
+                cancelEvent(event);
+            }
+        }
+    },
 
-     getScriptForListenerInfo: function(listenerInfo)
-     {
-         var fn = listenerInfo.getDebugObject();
-         if (fn && fn instanceof Ci.jsdIValue)
-         {
-             var script = fn.script;
-             return script;
-         }
-         if (FBTrace.DBG_EVENTS)
-             FBTrace.sysout("getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+fn+ "in "+context.getName()+" for "+this.getSource(listenerInfo),{fn: fn, listener: listener});
-     },
+    reFunctionName: /unction\s*([^\(]*)/,
 
-     getListenerSourceLink: function(listener)
-     {
-         var script = this.getScriptForListenerInfo(listener);
-         if (script)
-         {
-             var contexts = TabWatcher.contexts;  // chromebug
-             if (!isSystemURL(FirebugContext.getName()))
-                 contexts = [FirebugContext]; // Firebug
+    getScriptForListenerInfo: function(listenerInfo)
+    {
+        var fn = listenerInfo.getDebugObject();
+        if (fn && fn instanceof Ci.jsdIValue)
+        {
+            var script = fn.script;
+            return script;
+        }
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+
+                fn+ "in "+context.getName()+" for "+this.getSource(listenerInfo),
+                {fn: fn, listener: listener});
+    },
 
-             for (var i = 0; i < contexts.length; i++)
-             {
-                 var context = contexts[i];
+    getListenerSourceLink: function(listener)
+    {
+        var script = this.getScriptForListenerInfo(listener);
+        if (script)
+        {
+            var contexts = TabWatcher.contexts;  // chromebug
+            if (!isSystemURL(FirebugContext.getName()))
+                contexts = [FirebugContext]; // Firebug
 
-                 var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, script);
-                 if (sourceFile)
-                     return getSourceLinkForScript(script, context);
-             }
-         }
-         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getListenerSourceLink FAILS:  script "+script+ "in "+context.getName()+" for "+this.getSource(listener),{script: script, listener: listener});
-     },
+            for (var i = 0; i < contexts.length; i++)
+            {
+                var context = contexts[i];
 
-     getSource: function(listenerInfo)
-     {
-         var fnAsString = listenerInfo.toSource();
-         if (!fnAsString)
-             return $STR("eventbug.native_listener");
-         return fnAsString;
-     },
+                var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, script);
+                if (sourceFile)
+                    return getSourceLinkForScript(script, context);
+            }
+        }
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("getListenerSourceLink FAILS:  script "+script+ "in "+context.getName()+
+                " for "+this.getSource(listener),{script: script, listener: listener});
+    },
+
+    getSource: function(listenerInfo)
+    {
+        var script = this.getScriptForListenerInfo(listenerInfo);
+        if (script)
+            return script.functionObject.stringValue;
+        else
+            return $STR("eventbug.native_listener");
+    },
+
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
     className: "nsIEventListenerInfo",
-
     linkToType: "function",
 
     supportsObject: function(object)
