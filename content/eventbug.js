@@ -424,8 +424,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         }
         if (FBTrace.DBG_EVENTS)
             FBTrace.sysout("getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+
-                fn+ "in "+context.getName()+" for "+this.getSource(listenerInfo),
-                {fn: fn, listener: listener});
+                fn+" for "+this.getSource(listenerInfo), {fn: fn, listener: listener});
     },
 
     getListenerSourceLink: function(listener)
