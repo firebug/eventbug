@@ -108,7 +108,7 @@ EventPanel.prototype = extend(Firebug.Panel,
                 if (elt.firebugIgnore)
                     return;
 
-                var entry = new BoundEventListenerInfo(elt,  info);
+                var entry = new BoundEventListenerInfo(elt, info);
                 if (eventInfos.hasOwnProperty(info.type))
                     eventInfos[info.type].push(entry);
                 else
@@ -249,6 +249,74 @@ EventScriptPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
+    },
+});
+
+// ************************************************************************************************
+
+/**
+ * @panel This panel displayes a target chain - a list of event targets that would be
+ * used as DOMEvent.currentTarget while dispatching an event to event-target.
+ * Some events, especially 'load', may actually have a shorter event target chain than
+ * what this methods returns.
+ */
+function EventTargetChainPanel() {}
+EventTargetChainPanel.prototype = extend(Firebug.Panel,
+/** @lends EventTargetChainPanel */
+{
+    name: "events-targetChain",
+    title: $STR("eventbug.Targets"),
+    parentPanel: "events",
+
+    initialize: function(context, doc)
+    {
+        Firebug.Panel.initialize.apply(this, arguments);
+    },
+
+    updateSelection: function(info)
+    {
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("events.updateSelection; " + info);
+
+        if (!(info instanceof BoundEventListenerInfo))
+            return;
+
+        var count = {};
+        var targetChain = eventListenerService.getEventTargetChainFor(info.element, count);
+
+        // Skip all elements outside of the current page window.
+        var elements = [];
+        for (var i=0; i<targetChain.length; i++)
+        {
+            var element = targetChain[i];
+            elements.push(element);
+
+            if (element instanceof Ci.nsIDOMWindow)
+                break;
+        }
+
+        // Generate content
+        if (elements.length)
+            EventTargetChain.tag.replace({targetChain: elements}, this.panelNode);
+    }
+});
+
+var EventTargetChain = domplate(Firebug.Rep,
+{
+    tag:
+        DIV({"style": "padding: 8px"},
+            FOR("element", "$targetChain",
+                DIV(
+                    TAG("$element|getNaturalTag", {object: "$element"})
+                )
+            )
+        ),
+
+    getNaturalTag: function(value)
+    {
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
     },
 });
 
@@ -574,7 +642,7 @@ var EventInfoTemplate = domplate(Firebug.Rep,
         ),
 
     eventRow:
-        TR({"class": "eventRow", onclick: "$onClickEventRow"},
+        TR({"class": "eventRow", _repObject: "$info", onclick: "$onClickEventRow"},
             TD({"class": "eventCol"},
                 DIV({"class": "eventRowBox"},
                     TAG(BoundEventListenerInfoRep.tag, {object: "$info"})
@@ -679,18 +747,20 @@ var EventInfoTemplate = domplate(Firebug.Rep,
 
     selectRow: function(row)
     {
-        if (this.selectedRow)
-            removeClass(this.selectedRow, "selected");
+        var panel = Firebug.getElementPanel(row);
 
-        if (this.selectedRow == row)
-        {
-            this.selectedRow = null;
-            return;
-        }
+        if (panel.selectedRow)
+            removeClass(panel.selectedRow, "selected");
 
-        this.selectedRow = row;
+        if (panel.selectedRow == row)
+            row = null;
 
-        setClass(this.selectedRow, "selected");
+        panel.selectedRow = row;
+
+        if (panel.selectedRow)
+            setClass(panel.selectedRow, "selected");
+
+        panel.select(panel.selectedRow ? panel.selectedRow.repObject : null);
     }
 });
 
@@ -784,6 +854,7 @@ Firebug.registerPanel(EventPanel);
 Firebug.registerPanel(EventElementPanel);
 Firebug.registerPanel(EventHTMLPanel);
 Firebug.registerPanel(EventScriptPanel);
+Firebug.registerPanel(EventTargetChainPanel);
 Firebug.registerRep(EventListenerInfoRep);
 Firebug.registerRep(BoundEventListenerInfoRep);
 
