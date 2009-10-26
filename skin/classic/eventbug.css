@@ -17,6 +17,7 @@
 
 .eventRow:hover {
     background: #EFEFEF;
+    cursor: pointer;
 }
 
 .eventRow > .eventTypeCol {
@@ -62,6 +63,35 @@
 
 /************************************************************************************************/
 
+.eventRow.selected .eventListenerInfo {
+    border-color: Highlight;
+    background-color: Highlight;
+    -moz-border-radius: 3px;
+}
+
+.eventRow.selected .capturingLabel,
+.eventRow.selected .infoLabel,
+.eventRow.selected .objectLink,
+.eventRow.selected .selectorTag,
+.eventRow.selected .selectorId,
+.eventRow.selected .selectorClass,
+.eventRow.selected .selectorValue,
+.eventRow.selected .arrayComma {
+    color: HighlightText !important;
+}
+
+/************************************************************************************************/
+
 .eventListenerInfo {
-    padding: 2px 0 2px 18px !important;
+    padding: 2px 0 2px 4px !important;
+}
+
+/************************************************************************************************/
+
+.eventTypeBodyRow TABLE {
+    width: 100%;
+}
+
+.eventRowBox {
+    padding-left: 14px;
 }

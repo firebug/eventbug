@@ -504,6 +504,39 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
 // ************************************************************************************************
 
+var BoundEventListenerInfoRep = domplate(Firebug.Rep,
+{
+    tag:
+        DIV({"class": "eventListenerInfo", _repObject: "$object"},
+            TAG("$object.element|getNaturalTag",
+                {object: "$object.element"}
+            ),
+            SPAN({"class": "arrayComma"}, "."),
+            TAG("$object.listener|getNaturalTag",
+                {object: "$object.listener"}
+            )
+        ),
+
+    shortTag:
+        SPAN({_repObject: "$object"},
+            TAG("$object.element|getNaturalTag", {object: "$object.element"})
+        ),
+
+    getNaturalTag: function(value)
+    {
+        var rep = Firebug.getRep(value);
+        var tag = rep.shortTag ? rep.shortTag : rep.tag;
+        return tag;
+    },
+
+    supportsObject: function(object)
+    {
+        return (object instanceof BoundEventListenerInfo)?10:0;
+    },
+});
+
+// ************************************************************************************************
+
 /**
  * @domplate: Template for basic layout of the {@link EventPanel} panel.
  */
@@ -530,19 +563,29 @@ var EventInfoTemplate = domplate(Firebug.Rep,
     eventTypeBody:
         TR({"class": "eventTypeBodyRow"},
             TD({"class": "eventTypeBodyCol", colspan: 2},
-                TABLE({cellpadding: 0, cellspacing: 0},
+                TABLE({cellpadding: 0, cellspacing: 0,},
                     TBODY(
                         FOR("info", "$boundEventListeners.infos",
-                            TR({"class": "eventRow"},
-                                TD({"class": "eventCol"},
-                                    TAG("$boundEventListeners.tag", {object: "$info"})
-                                )
-                            )
+                            TAG("$info|getRowTag", {info: "$info"})
                         )
                     )
                 )
             )
         ),
+
+    eventRow:
+        TR({"class": "eventRow", onclick: "$onClickEventRow"},
+            TD({"class": "eventCol"},
+                DIV({"class": "eventRowBox"},
+                    TAG(BoundEventListenerInfoRep.tag, {object: "$info"})
+                )
+            )
+        ),
+
+    getRowTag: function()
+    {
+        return this.eventRow;
+    },
 
     /**
      * Convert from hashTable keyed by eventType to array
@@ -563,8 +606,7 @@ var EventInfoTemplate = domplate(Firebug.Rep,
                     FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type " +
                         typeof(boundEventListenerInfos), boundEventListenerInfos);
 
-                var member = {eventType: eventType, infos: boundEventListenerInfos,
-                    tag: BoundEventListenerInfoRep.tag};
+                var member = {eventType: eventType, infos: boundEventListenerInfos};
                 members.push(member);
             }
         }
@@ -620,40 +662,36 @@ var EventInfoTemplate = domplate(Firebug.Rep,
         {
             row.parentNode.removeChild(row.nextSibling);
         }
+    },
+
+    onClickEventRow: function(event)
+    {
+        if (isLeftClick(event))
+        {
+            var row = getAncestorByClass(event.target, "eventRow");
+            if (row)
+            {
+                this.selectRow(row);
+                cancelEvent(event);
+            }
+        }
+    },
+
+    selectRow: function(row)
+    {
+        if (this.selectedRow)
+            removeClass(this.selectedRow, "selected");
+
+        if (this.selectedRow == row)
+        {
+            this.selectedRow = null;
+            return;
+        }
+
+        this.selectedRow = row;
+
+        setClass(this.selectedRow, "selected");
     }
-});
-
-// ************************************************************************************************
-
-var BoundEventListenerInfoRep = domplate(Firebug.Rep,
-{
-    tag:
-        DIV({"class": "eventListenerInfo", _repObject: "$object"},
-            TAG("$object.element|getNaturalTag",
-                {object: "$object.element"}
-            ),
-            SPAN({"class": "arrayComma"}, "."),
-            TAG("$object.listener|getNaturalTag",
-                {object: "$object.listener"}
-            )
-        ),
-
-    shortTag:
-        SPAN({_repObject: "$object"},
-            TAG("$object.element|getNaturalTag", {object: "$object.element"})
-        ),
-
-    getNaturalTag: function(value)
-    {
-        var rep = Firebug.getRep(value);
-        var tag = rep.shortTag ? rep.shortTag : rep.tag;
-        return tag;
-    },
-
-    supportsObject: function(object)
-    {
-        return (object instanceof BoundEventListenerInfo)?10:0;
-    },
 });
 
 // ************************************************************************************************
