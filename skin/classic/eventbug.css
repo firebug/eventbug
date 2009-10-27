@@ -3,12 +3,21 @@
 .panelNode-ElementEvents {
 } 
 
+.panelNode-events-script {
+    overflow: hidden;
+    font-family: Monaco, monospace !important;
+}
+
+.panelNode-events-targetChain {
+    padding: 8px;
+}
+
+/************************************************************************************************/
+
 .eventInfoTable {
     width: 100%;
     font-size: 11px;
 }
-
-/************************************************************************************************/
 
 .eventRow {
     background: white;

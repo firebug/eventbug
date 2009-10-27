@@ -281,6 +281,13 @@ EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
     initialize: function(context, doc)
     {
         Firebug.HTMLPanel.prototype.initialize.apply(this, arguments);
+        appendStylesheet(doc, "eventBugStyles");
+    },
+
+    show: function(state)
+    {
+        Firebug.HTMLPanel.prototype.show.apply(this, arguments);
+        this.showToolbarButtons("fbHTMLButtons", false);
     },
 
     updateSelection: function(info)
@@ -307,7 +314,7 @@ EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
  * @panel
  */
 function EventScriptPanel() {}
-EventScriptPanel.prototype = extend(Firebug.Panel,
+EventScriptPanel.prototype = extend(Firebug.ScriptPanel.prototype,
 /** @lends EventHTMLPanel */
 {
     name: "events-script",
@@ -316,8 +323,38 @@ EventScriptPanel.prototype = extend(Firebug.Panel,
 
     initialize: function(context, doc)
     {
-        Firebug.Panel.initialize.apply(this, arguments);
+        Firebug.ScriptPanel.prototype.initialize.apply(this, arguments);
+        appendStylesheet(doc, "eventBugStyles");
     },
+
+    show: function(state)
+    {
+        Firebug.HTMLPanel.prototype.show.apply(this, arguments);
+        this.showToolbarButtons("fbScriptButtons", false);
+        this.showToolbarButtons("fbLocationSeparator", false);
+        this.showToolbarButtons("fbLocationList", false);
+    },
+
+    updateSelection: function(info)
+    {
+        var els = getEventListenerService();
+        if (!els)
+        {
+            FirebugReps.Warning.tag.replace({object:
+                "eventbug.You need Firefox 37"},
+                this.panelNode);
+            return;
+        }
+
+        if (info instanceof BoundEventListenerInfo)
+        {
+            var link = EventListenerInfoRep.getListenerSourceLink(info.listener);
+            if (link)
+                this.select(link);
+        }
+        else
+            return Firebug.ScriptPanel.prototype.updateSelection.apply(this, arguments);
+    }
 });
 
 // ************************************************************************************************
@@ -339,6 +376,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
+        appendStylesheet(doc, "eventBugStyles");
     },
 
     updateSelection: function(info)
@@ -381,7 +419,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
 var EventTargetChain = domplate(BaseRep,
 {
     tag:
-        DIV({"style": "padding: 8px"},
+        DIV(
             FOR("element", "$targetChain",
                 DIV(
                     TAG("$element|getNaturalTag", {object: "$element"})
