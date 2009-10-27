@@ -7,7 +7,10 @@ FBL.ns(function() { with (FBL) {
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
+const prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch2);
 const SHOW_ALL = Ci.nsIDOMNodeFilter.SHOW_ALL;
+
+const showNativePref = "events.showNative";
 
 var eventListenerService = null;
 
@@ -21,7 +24,7 @@ Firebug.registerStringBundle("chrome://eventbug/locale/eventbug.properties");
 // ************************************************************************************************
 
 /**
- * @module Represents a module for the EventBug extension. It's used to register and
+ * @module Represents a module for the EventBug extension. It's used e.g. to register and
  * unregister Trace listener that customizes trace logs within the FBTrace console.
  */
 Firebug.EventModule = extend(Firebug.Module,
@@ -33,14 +36,53 @@ Firebug.EventModule = extend(Firebug.Module,
             Firebug.TraceModule.addListener(this.TraceListener);
 
         Firebug.Module.initialize.apply(this, arguments);
+
+        prefs.addObserver(Firebug.prefDomain, this, false);
+
+        this.updateShowNativeButton();
     },
 
     shutdown: function()
     {
         Firebug.Module.shutdown.apply(this, arguments);
 
+        prefs.removeObserver(Firebug.prefDomain, this, false);
+
         if (Firebug.TraceModule && Firebug.TraceModule.removeListener)
             Firebug.TraceModule.removeListener(this.TraceListener);
+    },
+
+    internationalizeUI: function(doc)
+    {
+        var elements = ["eventShowNative"];
+        for (var i=0; i<elements.length; i++)
+        {
+            var element = $(elements[i], doc);
+            FBL.internationalize(element, "label");
+            FBL.internationalize(element, "tooltiptext");
+        }
+    },
+
+    showNative: function(context)
+    {
+        var value = Firebug.getPref(Firebug.prefDomain, showNativePref);
+        Firebug.setPref(Firebug.prefDomain, showNativePref, !value);
+    },
+
+    // nsIPrefObserver
+    observe: function(subject, topic, data)
+    {
+        if (topic != "nsPref:changed")
+            return;
+
+        if (data.indexOf("events.showNative") != -1)
+            this.updateShowNativeButton();
+    },
+
+    updateShowNativeButton: function()
+    {
+        var value = Firebug.getPref(Firebug.prefDomain, showNativePref);
+        $("eventShowNative").checked = value;
     }
 });
 
@@ -128,6 +170,7 @@ EventPanel.prototype = extend(Firebug.Panel,
         if (!els)
             return;
 
+        var showNative = Firebug.getPref(Firebug.prefDomain, showNativePref);
         var walker = this.context.window.document.createTreeWalker(elt, SHOW_ALL, null, true);
 
         var node = elt;
@@ -139,6 +182,9 @@ EventPanel.prototype = extend(Firebug.Panel,
 
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
+                if (!showNative && info.inSystemEventGroup)
+                    return;
+
                 var entry = new BoundEventListenerInfo(elt, info);
                 if (eventInfos.hasOwnProperty(info.type))
                     eventInfos[info.type].push(entry);

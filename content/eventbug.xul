@@ -7,15 +7,16 @@
     <script src="chrome://eventbug/content/eventbug.js" type="application/x-javascript"/>
 
     <commandset id="mainCommandSet">
-        <command id="cmd_eventShowNative" oncommand="alert('TBD')"/>
+        <command id="cmd_eventShowNative" oncommand="Firebug.EventModule.showNative(FirebugContext)"/>
     </commandset> 
 
     <!-- Toolbar for Events panel -->
     <toolbar id="fbToolbar" align="center" role="toolbar">
         <hbox id="fbToolbarInner" insertafter="fbNetButtons" flex="1" align="center">
             <hbox id="fbEventButtons" insertafter="fbNetButtons" collapsed="true">
-                <toolbarbutton label="Show Native" class="toolbar-text-button"
-                    tooltiptext="Show even native listeners" command="cmd_eventShowNative"/>
+                <toolbarbutton id="eventShowNative" label="eventbug.Show Native"
+                    class="toolbar-text-button" tooltiptext="eventbug.Show native listeners"
+                    command="cmd_eventShowNative" type="radio" checked="false"/>
             </hbox>
         </hbox>
     </toolbar>
