@@ -134,21 +134,20 @@ EventPanel.prototype = extend(Firebug.Panel,
         var eventInfos = {};
         for (; node; node = walker.nextNode())
         {
+            if (unwrapObject(node).firebugIgnore)
+                continue;
+
             if (FBTrace.DBG_EVENTS)
                 FBTrace.sysout("events.getBoundEventInfos "+node, node);
-            if (node.firebugIgnore)
-                continue;
 
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
-                if (elt.firebugIgnore)
-                    return;
-
                 var entry = new BoundEventListenerInfo(elt, info);
                 if (eventInfos.hasOwnProperty(info.type))
                     eventInfos[info.type].push(entry);
                 else
                     eventInfos[info.type] = [entry];  // one handler of this type
+
                 if (FBTrace.DBG_EVENTS)
                     FBTrace.sysout("events.buildEventInfos "+info.type, eventInfos[info.type]);
             });
@@ -872,6 +871,20 @@ function appendStylesheet(doc)
         styleSheet.setAttribute("id", "eventBugStyles");
         addStyleSheet(doc, styleSheet);
     }
+}
+
+// xxxHonza: Remove as soon as Firebug 1.5b2 is out, the method is now available in lib.js 
+function unwrapObject(object)
+{
+    // TODO: Unwrapping should be centralized rather than sprinkling it around ad hoc.
+    // TODO: We might be able to make this check more authoritative with QueryInterface.
+    if (!object)
+        return object;
+
+    if (object.wrappedJSObject)
+        return object.wrappedJSObject;
+
+    return object;
 }
 
 // ************************************************************************************************
