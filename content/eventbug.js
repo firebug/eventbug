@@ -771,10 +771,7 @@ var EventInfoTemplate = domplate(BaseRep,
         {
             var row = getAncestorByClass(event.target, "eventRow");
             if (row)
-            {
                 this.selectRow(row);
-                cancelEvent(event);
-            }
         }
     },
 
