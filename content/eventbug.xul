@@ -8,6 +8,7 @@
 
     <commandset id="mainCommandSet">
         <command id="cmd_eventShowNative" oncommand="Firebug.EventModule.showNative(FirebugContext)"/>
+        <command id="cmd_eventRefresh" oncommand="Firebug.EventModule.refresh(FirebugContext)"/>
     </commandset> 
 
     <!-- Toolbar for Events panel -->
@@ -17,6 +18,10 @@
                 <toolbarbutton id="eventShowNative" label="eventbug.Show Native"
                     class="toolbar-text-button" tooltiptext="eventbug.Show native listeners"
                     command="cmd_eventShowNative" type="radio" checked="false"/>
+                <toolbarbutton id="eventRefresh" label="eventbug.Refresh"
+                    class="toolbar-text-button"
+                    tooltiptext="eventbug.Refresh to show dyanamically created listeners"
+                    command="cmd_eventRefresh" />
             </hbox>
         </hbox>
     </toolbar>

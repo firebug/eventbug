@@ -54,7 +54,7 @@ Firebug.EventModule = extend(Firebug.Module,
 
     internationalizeUI: function(doc)
     {
-        var elements = ["eventShowNative"];
+        var elements = ["eventShowNative", "eventRefresh"];
         for (var i=0; i<elements.length; i++)
         {
             var element = $(elements[i], doc);
@@ -63,10 +63,19 @@ Firebug.EventModule = extend(Firebug.Module,
         }
     },
 
+    refresh: function(context)
+    {
+        var panel = context.getPanel("events", true);
+        if (panel)
+            panel.refresh();
+    },
+
     showNative: function(context)
     {
         var value = Firebug.getPref(Firebug.prefDomain, showNativePref);
         Firebug.setPref(Firebug.prefDomain, showNativePref, !value);
+
+        this.refresh(context);
     },
 
     // nsIPrefObserver
@@ -111,9 +120,7 @@ EventPanel.prototype = extend(Firebug.Panel,
 
         this.showToolbarButtons("fbEventButtons", true);
 
-        var root = this.context.window.document.documentElement;
-        this.selection = this.getBoundEventInfos(root);
-        this.rebuild(true);
+        this.refresh();
     },
 
     hide: function()
@@ -121,6 +128,13 @@ EventPanel.prototype = extend(Firebug.Panel,
         Firebug.Panel.hide.apply(this, arguments);
 
         this.showToolbarButtons("fbEventButtons", false);
+    },
+
+    refresh: function()
+    {
+        var root = this.context.window.document.documentElement;
+        this.selection = this.getBoundEventInfos(root);
+        this.rebuild(true);
     },
 
     /**
@@ -628,9 +642,6 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
             var script = fn.script;
             return script;
         }
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("events.getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+
-                fn+" for "+this.getSource(listenerInfo), {fn: fn, listener: listener});
     },
 
     getListenerSourceLink: function(listener)
