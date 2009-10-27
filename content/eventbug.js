@@ -137,9 +137,6 @@ EventPanel.prototype = extend(Firebug.Panel,
             if (unwrapObject(node).firebugIgnore)
                 continue;
 
-            if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("events.getBoundEventInfos "+node, node);
-
             this.appendEventInfos(node, function buildEventInfos(elt, info)
             {
                 var entry = new BoundEventListenerInfo(elt, info);
@@ -147,13 +144,8 @@ EventPanel.prototype = extend(Firebug.Panel,
                     eventInfos[info.type].push(entry);
                 else
                     eventInfos[info.type] = [entry];  // one handler of this type
-
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("events.buildEventInfos "+info.type, eventInfos[info.type]);
             });
         }
-        if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("events.getBoundEventInfos eventInfos", eventInfos);
         return eventInfos;
     },
 
@@ -168,12 +160,7 @@ EventPanel.prototype = extend(Firebug.Panel,
         {
             var anInfo = infos[i];
             if (anInfo instanceof Ci.nsIEventListenerInfo) // QI
-            {
-                if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("events." + this.context.getName()+" info["+i+"] "+
-                        anInfo, [elt, anInfo]);
                 fnTakesEltInfo(elt, anInfo);
-            }
         }
     },
 
@@ -539,10 +526,10 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         var text = "";
 
         if (!listener.allowsUntrusted)
-            text += $STR("eventbug.block_untrusted");
+            text += $STR("eventbug.block untrusted");
 
         if (listener.inSystemEventGroup)
-            text += (text ? ", " : "") + $STR("eventbug.inSystemEventGroup");
+            text += (text ? ", " : "") + $STR("eventbug.native listener");
 
         return text ? ("(" + text + ")") : "";
     },
@@ -629,7 +616,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         if (script)
             return script.functionObject.stringValue;
         else
-            return $STR("eventbug.native_listener");
+            return $STR("eventbug.native listener");
     },
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
