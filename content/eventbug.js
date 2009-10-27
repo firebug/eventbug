@@ -21,6 +21,32 @@ Firebug.registerStringBundle("chrome://eventbug/locale/eventbug.properties");
 // ************************************************************************************************
 
 /**
+ * @module Represents a module for the EventBug extension. It's used to register and
+ * unregister Trace listener that customizes trace logs within the FBTrace console.
+ */
+Firebug.EventModule = extend(Firebug.Module,
+/** @lends Firebug.EventModule */
+{
+    initialize: function(prefDomain, prefNames)
+    {
+        if (Firebug.TraceModule && Firebug.TraceModule.addListener)
+            Firebug.TraceModule.addListener(this.TraceListener);
+
+        Firebug.Module.initialize.apply(this, arguments);
+    },
+
+    shutdown: function()
+    {
+        Firebug.Module.shutdown.apply(this, arguments);
+
+        if (Firebug.TraceModule && Firebug.TraceModule.removeListener)
+            Firebug.TraceModule.removeListener(this.TraceListener);
+    }
+});
+
+// ************************************************************************************************
+
+/**
  * @panel Represents an Events panel displaying a list of registered DOM event listeners.
  * The list is grouped by event types.
  */
@@ -70,20 +96,20 @@ EventPanel.prototype = extend(Firebug.Panel,
             else
             {
                 if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("event.rebuild no this.selection");
+                    FBTrace.sysout("events.rebuild no this.selection");
             }
         }
         catch(e)
         {
             if (FBTrace.DBG_ERRORS)
-                FBTrace.sysout("Event.rebuild fails "+e, e);
+                FBTrace.sysout("events.rebuild fails "+e, e);
         }
     },
 
     getObjectPath: function(object)
     {
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("event getObjectPath NOOP", object);
+            FBTrace.sysout("events.getObjectPath NOOP", object);
     },
 
     /**
@@ -98,8 +124,8 @@ EventPanel.prototype = extend(Firebug.Panel,
         var eventInfos = {};
         for (; node; node = walker.nextNode())
         {
-            if(FBTrace.DBG_EVENTS)
-                FBTrace.sysout("getBoundEventInfos "+node, node);
+            if (FBTrace.DBG_EVENTS)
+                FBTrace.sysout("events.getBoundEventInfos "+node, node);
             if (node.firebugIgnore)
                 continue;
 
@@ -114,11 +140,11 @@ EventPanel.prototype = extend(Firebug.Panel,
                 else
                     eventInfos[info.type] = [entry];  // one handler of this type
                 if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("buildEventInfos "+info.type, eventInfos[info.type]);
+                    FBTrace.sysout("events.buildEventInfos "+info.type, eventInfos[info.type]);
             });
         }
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getBoundEventInfos eventInfos", eventInfos);
+            FBTrace.sysout("events.getBoundEventInfos eventInfos", eventInfos);
         return eventInfos;
     },
 
@@ -134,8 +160,9 @@ EventPanel.prototype = extend(Firebug.Panel,
             var anInfo = infos[i];
             if (anInfo instanceof Ci.nsIEventListenerInfo) // QI
             {
-                if(FBTrace.DBG_EVENTS)
-                    FBTrace.sysout(this.context.getName()+" info["+i+"] "+anInfo, [elt, anInfo]);
+                if (FBTrace.DBG_EVENTS)
+                    FBTrace.sysout("events." + this.context.getName()+" info["+i+"] "+
+                        anInfo, [elt, anInfo]);
                 fnTakesEltInfo(elt, anInfo);
             }
         }
@@ -185,7 +212,7 @@ EventElementPanel.prototype = extend(Firebug.Panel,
             return;
 
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("eventbug.updateSelection; " + element.localName);
+            FBTrace.sysout("events.updateSelection; " + element.localName);
 
         var els = getEventListenerService();
         if (!els)
@@ -456,7 +483,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         var end = fnAsString.lastIndexOf('}') + 1;
         var fncName = cropString(fnAsString.substring(start, end), 20);
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getHandlerSummary "+fncName, listener);
+            FBTrace.sysout("events.getHandlerSummary "+fncName, listener);
 
         return fncName;
     },
@@ -464,7 +491,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
     onClickFunction: function(event)
     {
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("onClickFunction, "+event, event);
+            FBTrace.sysout("events.onClickFunction, "+event, event);
 
         if (isLeftClick(event))
         {
@@ -494,7 +521,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
             return script;
         }
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+
+            FBTrace.sysout("events.getScriptForListenerInfo FAILS: listenerInfo has getDebugObject "+
                 fn+" for "+this.getSource(listenerInfo), {fn: fn, listener: listener});
     },
 
@@ -517,7 +544,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
             }
         }
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getListenerSourceLink FAILS:  script "+script+ "in "+context.getName()+
+            FBTrace.sysout("events.getListenerSourceLink FAILS:  script "+script+ "in "+context.getName()+
                 " for "+this.getSource(listener),{script: script, listener: listener});
     },
 
@@ -654,7 +681,7 @@ var EventInfoTemplate = domplate(BaseRep,
     getBoundEventInfosArray: function(boundEventListenersByType)
     {
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getBoundEventInfosArray had type " + typeof(boundEventListenersByType),
+            FBTrace.sysout("events.getBoundEventInfosArray had type " + typeof(boundEventListenersByType),
                 boundEventListenersByType);
 
         var members = [];
@@ -664,7 +691,7 @@ var EventInfoTemplate = domplate(BaseRep,
             {
                 var boundEventListenerInfos = boundEventListenersByType[eventType];
                 if (FBTrace.DBG_EVENTS)
-                    FBTrace.sysout("getBoundEventInfosArray "+eventType+" had type " +
+                    FBTrace.sysout("events.getBoundEventInfosArray "+eventType+" had type " +
                         typeof(boundEventListenerInfos), boundEventListenerInfos);
 
                 var member = {eventType: eventType, infos: boundEventListenerInfos};
@@ -673,14 +700,14 @@ var EventInfoTemplate = domplate(BaseRep,
         }
 
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getBoundEventInfosArray members "+members.length, members);
+            FBTrace.sysout("events.getBoundEventInfosArray members "+members.length, members);
         return members;
     },
 
     getEventListnerInfos: function(boundEventListeners)
     {
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("getValue ", eventType);
+            FBTrace.sysout("events.getValue ", eventType);
         return eventType.value;
     },
 
@@ -708,7 +735,7 @@ var EventInfoTemplate = domplate(BaseRep,
             if (!boundListeners && row.wrappedJSObject)
                 boundListeners = row.wrappedJSObject.repObject;
             if (FBTrace.DBG_EVENTS)
-                FBTrace.sysout("toggleRow boundListeners", boundListeners);
+                FBTrace.sysout("events.toggleRow boundListeners", boundListeners);
 
             this.eventTypeBody.insertRows({boundEventListeners: boundListeners}, row);
         }
@@ -751,6 +778,29 @@ var EventInfoTemplate = domplate(BaseRep,
 });
 
 // ************************************************************************************************
+// FBTraceConsole
+
+Firebug.EventModule.TraceListener =
+{
+    onLoadConsole: function(win, rootNode)
+    {
+        appendStylesheet(rootNode.ownerDocument);
+    },
+
+    onDump: function(message)
+    {
+        var prefix = "events.";
+        var index = message.text.indexOf(prefix);
+        if (index == 0)
+        {
+            message.text = message.text.substr(prefix.length);
+            message.text = trimLeft(message.text);
+            message.type = "DBG_EVENTS";
+        }
+    }
+};
+
+// ************************************************************************************************
 // Helpers
 
 /**
@@ -769,7 +819,7 @@ function getEventListenerService()
         catch (exc)
         {
             if (FBTrace.DBG_ERRORS)
-                FBTrace.sysout("getEventListenerService FAILS "+exc, exc);
+                FBTrace.sysout("events.getEventListenerService FAILS "+exc, exc);
         }
     }
     return eventListenerService;
@@ -843,6 +893,7 @@ Firebug.registerPanel(EventScriptPanel);
 Firebug.registerPanel(EventTargetChainPanel);
 Firebug.registerRep(EventListenerInfoRep);
 Firebug.registerRep(BoundEventListenerInfoRep);
+Firebug.registerModule(Firebug.EventModule);
 
 // ************************************************************************************************
 }});
