@@ -93,6 +93,10 @@ EventPanel.prototype = extend(Firebug.Panel,
             {
                 EventInfoTemplate.tag.replace({object: this.selection}, this.panelNode);
             }
+            else if (!getEventListenerService())
+            {
+                Warning.show("eventbug.You need Firefox 37", this.panelNode);
+            }
             else
             {
                 if (FBTrace.DBG_EVENTS)
@@ -118,6 +122,12 @@ EventPanel.prototype = extend(Firebug.Panel,
      */
     getBoundEventInfos: function(elt)
     {
+        var els = getEventListenerService();
+
+        // If the listener service isn't available don't iterate the document tree.
+        if (!els)
+            return;
+
         var walker = this.context.window.document.createTreeWalker(elt, SHOW_ALL, null, true);
 
         var node = elt;
@@ -218,8 +228,9 @@ EventElementPanel.prototype = extend(Firebug.Panel,
         if (!els)
         {
             FirebugReps.Warning.tag.replace({object:
-                $STR("eventbug.You need Firefox 3.7")},
+                "eventbug.You need Firefox 37"},
                 this.panelNode);
+            return;
         }
 
         var listeners = els.getListenerInfoFor(element, {});
@@ -230,7 +241,7 @@ EventElementPanel.prototype = extend(Firebug.Panel,
         else
         {
             FirebugReps.Warning.tag.replace({object:
-                $STR("eventbug.This Element has no listeners")},
+                "eventbug.This Element has no listeners"},
                 this.panelNode);
         }
     },
@@ -318,11 +329,20 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
         if (FBTrace.DBG_EVENTS)
             FBTrace.sysout("events.updateSelection; " + info);
 
+        var els = getEventListenerService();
+        if (!els)
+        {
+            FirebugReps.Warning.tag.replace({object:
+                "eventbug.You need Firefox 37"},
+                this.panelNode);
+            return;
+        }
+
         if (!(info instanceof BoundEventListenerInfo))
             return;
 
         var count = {};
-        var targetChain = eventListenerService.getEventTargetChainFor(info.element, count);
+        var targetChain = els.getEventTargetChainFor(info.element, count);
 
         // Skip all elements outside of the current page window.
         var elements = [];
@@ -778,6 +798,27 @@ var EventInfoTemplate = domplate(BaseRep,
 });
 
 // ************************************************************************************************
+
+var Warning = domplate(Firebug.Reps,
+{
+    tag:
+        TABLE({cellpadding: 0, cellspacing: 0, width: "100%", height: "100%"},
+            TBODY(
+                TR(
+                    TD({"class": "eventWarning"})
+                )
+            )
+        ),
+
+    show: function(message, parentNode)
+    {
+        var table = this.tag.replace({}, parentNode);
+        var column = getElementByClass(table, "eventWarning");
+        FirebugReps.Warning.tag.replace({object: message}, column);
+    }
+});
+
+// ************************************************************************************************
 // FBTraceConsole
 
 Firebug.EventModule.TraceListener =
@@ -843,8 +884,12 @@ function dumpEvents()
 {
     try
     {
+        var els = getEventListenerService();
+        if (!els)
+            return;
+
         var elt = document.getElementById("button");
-        var info = eventListenerService.getListenerInfoFor(elt);
+        var info = els.getListenerInfoFor(elt);
         if (info instanceof Components.interfaces.nsIVariant)
         {
             output.heading("nsIVariant typeof info: "+typeof info+"\n");
