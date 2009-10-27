@@ -267,10 +267,11 @@ var BaseRep = domplate(Firebug.Rep,
 // ************************************************************************************************
 
 /**
- * @panel
+ * @panel Helper HTML side panel for the Events panel. This panel shows HTML
+ * source of the selected element in the Events panel.
  */
 function EventHTMLPanel() {}
-EventHTMLPanel.prototype = extend(Firebug.Panel,
+EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
 /** @lends EventHTMLPanel */
 {
     name: "events-html",
@@ -279,8 +280,25 @@ EventHTMLPanel.prototype = extend(Firebug.Panel,
 
     initialize: function(context, doc)
     {
-        Firebug.Panel.initialize.apply(this, arguments);
+        Firebug.HTMLPanel.prototype.initialize.apply(this, arguments);
     },
+
+    updateSelection: function(info)
+    {
+        var els = getEventListenerService();
+        if (!els)
+        {
+            FirebugReps.Warning.tag.replace({object:
+                "eventbug.You need Firefox 37"},
+                this.panelNode);
+            return;
+        }
+
+        if (info instanceof BoundEventListenerInfo)
+            this.select(info.element);
+        else
+            return Firebug.HTMLPanel.prototype.updateSelection.apply(this, arguments);
+    }
 });
 
 // ************************************************************************************************
@@ -326,7 +344,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
     updateSelection: function(info)
     {
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("events.updateSelection; " + info);
+            FBTrace.sysout("events.EventTargetChainPanel.updateSelection;", info);
 
         var els = getEventListenerService();
         if (!els)
