@@ -4,7 +4,7 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>event@getfirebug.com</em:id>
+    <em:id>eventbug@getfirebug.com</em:id>
     <em:version>@VERSION@@RELEASE@</em:version>
     <em:type>2</em:type>
 
@@ -20,6 +20,6 @@
     <em:name>EventBug</em:name>
     <em:description>Event views for Firebug.</em:description>
     <em:creator>John J. Barton</em:creator>
-    <em:creator>Jan Odvarko</em:creator>
+    <em:contributor>Jan Odvarko</em:contributor>
   </Description>
 </RDF>
