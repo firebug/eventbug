@@ -151,7 +151,7 @@ EventPanel.prototype = extend(Firebug.Panel,
             }
             else if (!getEventListenerService())
             {
-                Warning.show("eventbug.You need Firefox 37", this.panelNode);
+                Warning.show("eventbug.You need Firefox 36", this.panelNode);
             }
             else
             {
@@ -274,7 +274,7 @@ EventElementPanel.prototype = extend(Firebug.Panel,
         if (!els)
         {
             FirebugReps.Warning.tag.replace({object:
-                "eventbug.You need Firefox 37"},
+                "eventbug.You need Firefox 36"},
                 this.panelNode);
             return;
         }
@@ -343,7 +343,7 @@ EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
         if (!els)
         {
             FirebugReps.Warning.tag.replace({object:
-                "eventbug.You need Firefox 37"},
+                "eventbug.You need Firefox 36"},
                 this.panelNode);
             return;
         }
@@ -388,7 +388,7 @@ EventScriptPanel.prototype = extend(Firebug.ScriptPanel.prototype,
         if (!els)
         {
             FirebugReps.Warning.tag.replace({object:
-                "eventbug.You need Firefox 37"},
+                "eventbug.You need Firefox 36"},
                 this.panelNode);
             return;
         }
@@ -435,7 +435,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
         if (!els)
         {
             FirebugReps.Warning.tag.replace({object:
-                "eventbug.You need Firefox 37"},
+                "eventbug.You need Firefox 36"},
                 this.panelNode);
             return;
         }
