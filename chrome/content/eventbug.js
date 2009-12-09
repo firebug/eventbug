@@ -931,7 +931,7 @@ Firebug.EventModule.TraceListener =
         if (index == 0)
         {
             message.text = message.text.substr(prefix.length);
-            message.text = trimLeft(message.text);
+            message.text = trim(message.text);
             message.type = "DBG_EVENTS";
         }
     }
