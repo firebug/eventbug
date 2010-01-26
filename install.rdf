@@ -21,5 +21,8 @@
     <em:description>Event views for Firebug.</em:description>
     <em:creator>John J. Barton</em:creator>
     <em:contributor>Jan Odvarko</em:contributor>
+    <em:homepageURL>http://getfirebug.com/releases/extensions.html#eventbug</em:homepageURL>
+
+    <em:updateURL>https://getfirebug.com/releases/eventbug/1.5/update.rdf</em:updateURL>
   </Description>
 </RDF>
