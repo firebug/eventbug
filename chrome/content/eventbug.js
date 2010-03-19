@@ -342,8 +342,7 @@ EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
         var els = getEventListenerService();
         if (!els)
         {
-            FirebugReps.Warning.tag.replace({object:
-                "eventbug.You need Firefox 36"},
+            FirebugReps.Warning.tag.replace({object: "eventbug.You need Firefox 36"},
                 this.panelNode);
             return;
         }
@@ -371,12 +370,14 @@ EventScriptPanel.prototype = extend(Firebug.ScriptPanel.prototype,
     initialize: function(context, doc)
     {
         Firebug.ScriptPanel.prototype.initialize.apply(this, arguments);
+
         appendStylesheet(doc, "eventBugStyles");
     },
 
     show: function(state)
     {
-        Firebug.HTMLPanel.prototype.show.apply(this, arguments);
+        Firebug.ScriptPanel.prototype.show.apply(this, arguments);
+
         this.showToolbarButtons("fbScriptButtons", false);
         this.showToolbarButtons("fbLocationSeparator", false);
         this.showToolbarButtons("fbLocationList", false);
@@ -605,7 +606,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         var end = fnAsString.lastIndexOf('}') + 1;
         var fncName = cropString(fnAsString.substring(start, end), 20);
         if (FBTrace.DBG_EVENTS)
-            FBTrace.sysout("events.getHandlerSummary "+fncName, listener);
+            FBTrace.sysout("events.getHandlerSummary " + fncName + ", " + listener.type, listener);
 
         return fncName;
     },
@@ -637,6 +638,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
     getScriptForListenerInfo: function(listenerInfo)
     {
         var fn = listenerInfo.getDebugObject();
+        if (FBTrace.DBG_EVENTS)
+            FBTrace.sysout("events.getScriptForListenerInfo " + listenerInfo.type + ", " + fn, fn);
+
         if (fn && fn instanceof Ci.jsdIValue)
         {
             var script = fn.script;
@@ -669,9 +673,9 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
     getSource: function(listenerInfo)
     {
-        var script = this.getScriptForListenerInfo(listenerInfo);
-        if (script)
-            return script.functionObject.stringValue;
+        var fn = listenerInfo.getDebugObject();
+        if (fn && fn instanceof Ci.jsdIValue)
+            return fn.stringValue;
         else
             return $STR("eventbug.native listener");
     },
