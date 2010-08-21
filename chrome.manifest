@@ -3,4 +3,5 @@ skin    eventbug    classic/1.0     chrome/skin/classic/
 locale  eventbug    en-US           chrome/locale/en-US/
 
 overlay chrome://firebug/content/firebugOverlay.xul         chrome://eventbug/content/eventbug.xul
-
+# Also useful in chromebug
+overlay chrome://fb4cb/content/firebugOverlay.xul         chrome://eventbug/content/eventbug.xul
