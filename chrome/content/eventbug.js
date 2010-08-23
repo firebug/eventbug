@@ -111,7 +111,7 @@ EventPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
-        appendStylesheet(doc, "eventBugStyles");
+        appendStylesheet(doc, "chrome://eventbug/skin/eventbug.css");
     },
 
     show: function(state)
@@ -247,7 +247,7 @@ EventElementPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
-        appendStylesheet(doc, "eventBugStyles");
+        appendStylesheet(doc, "chrome://eventbug/skin/eventbug.css");
     },
 
     show: function(state)
@@ -328,7 +328,7 @@ EventHTMLPanel.prototype = extend(Firebug.HTMLPanel.prototype,
     initialize: function(context, doc)
     {
         Firebug.HTMLPanel.prototype.initialize.apply(this, arguments);
-        appendStylesheet(doc, "eventBugStyles");
+        appendStylesheet(doc, "chrome://eventbug/skin/eventbug.css");
     },
 
     show: function(state)
@@ -371,7 +371,7 @@ EventScriptPanel.prototype = extend(Firebug.ScriptPanel.prototype,
     {
         Firebug.ScriptPanel.prototype.initialize.apply(this, arguments);
 
-        appendStylesheet(doc, "eventBugStyles");
+        appendStylesheet(doc, "chrome://eventbug/skin/eventbug.css");
     },
 
     show: function(state)
@@ -424,7 +424,7 @@ EventTargetChainPanel.prototype = extend(Firebug.Panel,
     initialize: function(context, doc)
     {
         Firebug.Panel.initialize.apply(this, arguments);
-        appendStylesheet(doc, "eventBugStyles");
+        appendStylesheet(doc, "chrome://eventbug/skin/eventbug.css");
     },
 
     updateSelection: function(info)
@@ -700,7 +700,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
     inspectObject: function(listenerInfo, context)
     {
-        var script = getScriptForListenerInfo(listenerInfo);
+        var script = this.getScriptForListenerInfo(listenerInfo);
 
         if (script)
             return context.chrome.select(script);
@@ -925,7 +925,7 @@ Firebug.EventModule.TraceListener =
 {
     onLoadConsole: function(win, rootNode)
     {
-        appendStylesheet(rootNode.ownerDocument);
+        FBL.appendStylesheet(rootNode.ownerDocument, "chrome://eventbug/skin/eventbug.css");
     },
 
     onDump: function(message)
@@ -966,18 +966,8 @@ function getEventListenerService()
     return eventListenerService;
 }
 
-function appendStylesheet(doc)
-{
-    // Make sure the stylesheet isn't appended twice.
-    if (!$("eventBugStyles", doc))
-    {
-        var styleSheet = createStyleSheet(doc, "chrome://eventbug/skin/eventbug.css");
-        styleSheet.setAttribute("id", "eventBugStyles");
-        addStyleSheet(doc, styleSheet);
-    }
-}
 
-// xxxHonza: Remove as soon as Firebug 1.5b2 is out, the method is now available in lib.js 
+// xxxHonza: Remove as soon as Firebug 1.5b2 is out, the method is now available in lib.js
 function unwrapObject(object)
 {
     // TODO: Unwrapping should be centralized rather than sprinkling it around ad hoc.
