@@ -5,7 +5,7 @@
 
 .panelNode-events-script {
     overflow: hidden;
-    font-family: Monaco, monospace !important;
+    font-family: monospace !important;
 }
 
 .panelNode-events-targetChain {
@@ -67,7 +67,7 @@
 }
 
 .eventScriptCol {
-    font-family: Monaco, monospace;
+    font-family: monospace;
 }
 
 /************************************************************************************************/
