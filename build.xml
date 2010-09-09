@@ -2,7 +2,7 @@
 
 <!-- In order to build eventbug extension run: $ant build
     The final xpi file should be located in release directory -->
-<project name="netExport" basedir="." default="build">
+<project name="eventbug" basedir="." default="build">
 
     <!-- Directories -->
     <property name="build.dir" value="release"/>
@@ -46,7 +46,7 @@
             <replacefilter token="@RELEASE@" property="RELEASE"/>
         </replace>
 
-        <!-- Create final netExport.xpi file -->
+        <!-- Create final eventbug.xpi file -->
         <zip destfile="${build.dir}/eventbug-${VERSION}${RELEASE}.xpi"
             basedir="${build.dir}" update="true" />
 
