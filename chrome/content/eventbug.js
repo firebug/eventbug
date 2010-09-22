@@ -925,7 +925,7 @@ Firebug.EventModule.TraceListener =
 {
     onLoadConsole: function(win, rootNode)
     {
-        FBL.appendStylesheet(rootNode.ownerDocument, "chrome://eventbug/skin/eventbug.css");
+        appendStylesheet(rootNode.ownerDocument, "chrome://eventbug/skin/eventbug.css");
     },
 
     onDump: function(message)
@@ -1026,6 +1026,21 @@ function dumpEvents()
     catch (exc)
     {
         output.heading("Failed to get eventListenerService: "+exc+"\n");
+    }
+}
+
+// Backward compatibility with Firebug 1.5
+if (typeof(FBL.appendStylesheet) == "undefined")
+{
+    function appendStylesheet(doc, uri)
+    {
+        // Make sure the stylesheet is not appended twice.
+        if (FBL.$(uri, doc))
+            return;
+
+        var styleSheet = FBL.createStyleSheet(doc, uri);
+        styleSheet.setAttribute("id", uri);
+        FBL.addStyleSheet(doc, styleSheet);
     }
 }
 
