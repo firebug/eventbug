@@ -7,8 +7,8 @@
     <script src="chrome://eventbug/content/eventbug.js" type="application/x-javascript"/>
 
     <commandset id="mainCommandSet">
-        <command id="cmd_eventShowNative" oncommand="Firebug.EventModule.showNative(FirebugContext)"/>
-        <command id="cmd_eventRefresh" oncommand="Firebug.EventModule.refresh(FirebugContext)"/>
+        <command id="cmd_eventShowNative" oncommand="Firebug.EventModule.showNative(Firebug.currentContext)"/>
+        <command id="cmd_eventRefresh" oncommand="Firebug.EventModule.refresh(Firebug.currentContext)"/>
     </commandset> 
 
     <!-- Toolbar for Events panel -->

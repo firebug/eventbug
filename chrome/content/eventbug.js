@@ -73,7 +73,7 @@ Firebug.EventModule = extend(Firebug.Module,
     showNative: function(context)
     {
         var value = Firebug.getPref(Firebug.prefDomain, showNativePref);
-        Firebug.setPref(Firebug.prefDomain, showNativePref, !value);
+        Firebug.Options.set(showNativePref, !value);
 
         this.refresh(context);
     },
@@ -654,8 +654,8 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
         if (script)
         {
             var contexts = TabWatcher.contexts;  // chromebug
-            if (!isSystemURL(FirebugContext.getName()))
-                contexts = [FirebugContext]; // Firebug
+            if (!isSystemURL(Firebug.currentContext.getName()))
+                contexts = [Firebug.currentContext]; // Firebug
 
             for (var i = 0; i < contexts.length; i++)
             {
