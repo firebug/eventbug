@@ -189,6 +189,8 @@ EventPanel.prototype = extend(Firebug.Panel,
 
         var node = elt;
         var eventInfos = {};
+
+        // Iterate all elements on the page.
         for (; node; node = walker.nextNode())
         {
             if (unwrapObject(node).firebugIgnore)
@@ -206,6 +208,26 @@ EventPanel.prototype = extend(Firebug.Panel,
                     eventInfos[info.type] = [entry];  // one handler of this type
             });
         }
+
+        // Iterate all window objects (iframes) on the page.
+        for (var i=0; i<this.context.windows.length; i++)
+        {
+            var win = this.context.windows[i];
+            FBTrace.sysout("getBoundEventInfos ", win);
+
+            this.appendEventInfos(win, function buildEventInfos(elt, info)
+            {
+                if (!showNative && info.inSystemEventGroup) 
+                    return;
+
+                var entry = new BoundEventListenerInfo(elt, info);
+                if (eventInfos.hasOwnProperty(info.type)) 
+                    eventInfos[info.type].push(entry);
+                else 
+                    eventInfos[info.type] = [entry]; // one handler of this type
+            });
+        }
+
         return eventInfos;
     },
 
@@ -604,7 +626,7 @@ var EventListenerInfoRep = domplate(Firebug.Rep,
 
         var start = fnAsString.indexOf('{');
         var end = fnAsString.lastIndexOf('}') + 1;
-        var fncName = cropString(fnAsString.substring(start, end), 20);
+        var fncName = cropString(fnAsString.substring(start, end), 40);
         if (FBTrace.DBG_EVENTS)
             FBTrace.sysout("events.getHandlerSummary " + fncName + ", " + listener.type, listener);
 
