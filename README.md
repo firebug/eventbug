@@ -2,7 +2,7 @@ EventBug
 ========
 *Firebug Extension*
 
-[Download](getfirebug.com/releases/eventbug/)
+[Download](http://getfirebug.com/releases/eventbug/)
 
 Eventbug is a Firebug extension that lists all of the event handlers on the page
 grouped by event type.
