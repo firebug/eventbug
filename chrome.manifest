@@ -8,3 +8,4 @@ overlay chrome://fb4cb/content/firebugOverlay.xul         chrome://eventbug/cont
 locale  eventbug    en-US       chrome/locale/en-US/
 locale  eventbug    nl          chrome/locale/nl/
 locale  eventbug    zh-CN       chrome/locale/zh-CN/
+locale  eventbug    bg       	chrome/locale/bg/
